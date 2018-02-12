@@ -4,7 +4,7 @@
           [git/2, workspace/1, git_workspace/2, git_extract_pr/2,
            get_dlrn_fact/3, dlrn_last_bad/3, dlrn_status/3,
            download_build_last_dlrn_src/2, download_build_dlrn_src/3,
-           build_pr/4
+           build_pr/4, distgit_workspace/2
           ]).
 
 :- use_module(kb).
@@ -13,37 +13,45 @@
 :- use_module(library(xpath)).
 
 git(Name, GitUrl) :-
+    gitrepo(Name, GitUrl),
+    !.
+
+git(Name, GitUrl) :-
     github(Name, Url),
-    concat(Url, '.git', GitUrl).
+    string_concat(Url, ".git", GitUrl).
 
 workspace(W) :-
-    getenv('HOME', Home),
-    concat(Home, '/workspace', W),
+    getenv("HOME", Home),
+    string_concat(Home, "/workspace", W),
     mkdir(W).
 
 cmd(Fmt, Args) :-
     format(atom(Cmd), Fmt, Args),
-    string_concat('+ ', Cmd, StrCmd),
+    string_concat("+ ", Cmd, StrCmd),
     writeln(StrCmd),
     shell(Cmd).
+
+distgit_workspace(Name, Dir) :-
+    string_concat(Name, "-distgit", DistGitName),
+    git_workspace(DistGitName, Dir).
 
 git_workspace(Name, Dir) :-
     git(Name, Url),
     workspace(W),
-    format(atom(Dir), '~w/~w', [W, Name]),
+    format(atom(Dir), "~w/~w", [W, Name]),
     git_workspace_aux(Dir, W, Url, Name).
 
 git_workspace_aux(Dir, W, _, Name) :-
     exists_directory(Dir),
-    cmd('cd ~w/~w; git fetch', [W, Name]),
+    cmd("cd ~w/~w; git fetch", [W, Name]),
     !.
 
 git_workspace_aux(_, W, Url, Name) :-
-    cmd('cd ~w; rm -rf ~w; git clone ~w ~w', [W, Name, Url, Name]).
+    cmd("cd ~w; rm -rf ~w; git clone ~w ~w", [W, Name, Url, Name]).
 
 git_extract_pr(Name, Pr) :-
     git_workspace(Name, Dir),
-    cmd('cd ~w; git-extract-pr.sh ~w', [Dir, Pr]).
+    cmd("cd ~w; git-extract-pr.sh ~w", [Dir, Pr]).
 
 mkdir(D) :-
     exists_directory(D), !.
@@ -58,7 +66,7 @@ get_dlrn_fact(Name, Branch, Info) :-
 
 get_dlrn_dom(Name, Branch, DOM) :-
     dlrn_status_url(Name, Branch, BaseUrl),
-    string_concat(BaseUrl, 'report.html', Url),
+    string_concat(BaseUrl, "report.html", Url),
     http_open(Url, In, []),
     call_cleanup(
             load_html(In, DOM, []),
@@ -117,5 +125,5 @@ build_pr(Name, Branch, Path, Pr) :-
     git_extract_pr(Name, Pr),
     cmd("dlrn_inject_patch.sh ~w ~w ~w/~w/pr-~w.patch", [Ws, Path, Ws, Name, Pr]),
     cmd("dlrn_build_srcrpm.sh ~w ~w/SRPMS", [Ws, Path]).
-
+    
 %% rules.pl ends here
