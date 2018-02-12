@@ -2,7 +2,9 @@
 
 :- module(rules,
           [git/2, workspace/1, git_workspace/2, git_extract_pr/2,
-           get_dlrn_fact/3, dlrn_last_bad/3, dlrn_status/3]).
+           get_dlrn_fact/3, dlrn_last_bad/3, dlrn_status/3,
+           download_build_last_dlrn_src/2, download_build_dlrn_src/3
+          ]).
 
 :- use_module(kb).
 
@@ -54,7 +56,8 @@ get_dlrn_fact(Name, Branch, Info) :-
     extract_dlrn_table_data(Rows, Info).
 
 get_dlrn_dom(Name, Branch, DOM) :-
-    dlrn_status_url(Name, Branch, Url),
+    dlrn_status_url(Name, Branch, BaseUrl),
+    string_concat(BaseUrl, 'report.html', Url),
     http_open(Url, In, []),
     call_cleanup(
             load_html(In, DOM, []),
@@ -95,5 +98,14 @@ basename(Name, Base) :-
 
 dlrn_status(Name, Branch, Status) :-
     world:dlrn_info(Name, Branch, [[Status,_]|_]).
+
+download_build_last_dlrn_src(Name, Branch) :-
+    world:dlrn_info(Name, Branch, [[_,[_,Path,_]]|_]),
+    download_dlrn_build_src(Name, Branch, Path).
+
+download_build_dlrn_src(Name, Branch, Path) :-
+    dlrn_status_url(Name, Branch, Url),
+    workspace(Ws),
+    cmd("download_and_build_srcrpm.sh ~w ~w ~w", [Ws, Url, Path]).
 
 %% rules.pl ends here
