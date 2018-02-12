@@ -11,7 +11,7 @@ update_facts() :-
     update_dlrn_facts.
 
 update_dlrn_facts() :-
-    retractall(dlrn_info/3),
+    retractall(dlrn_info(_,_,_)),
     dlrn_status_url(Name, Branch, _),
     get_dlrn_fact(Name, Branch, Info),
     asserta(dlrn_info(Name, Branch, Info)),
