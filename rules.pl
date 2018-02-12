@@ -18,6 +18,12 @@ workspace(W) :-
     concat(Home, '/workspace', W),
     mkdir(W).
 
+cmd(Fmt, Args) :-
+    format(atom(Cmd), Fmt, Args),
+    string_concat('+ ', Cmd, StrCmd),
+    writeln(StrCmd),
+    shell(Cmd).
+
 git_workspace(Name, Dir) :-
     git(Name, Url),
     workspace(W),
@@ -26,18 +32,15 @@ git_workspace(Name, Dir) :-
 
 git_workspace_aux(Dir, W, _, Name) :-
     exists_directory(Dir),
-    format(atom(Cmd), 'cd ~w/~w; git fetch', [W, Name]),
-    shell(Cmd),
+    cmd('cd ~w/~w; git fetch', [W, Name]),
     !.
 
 git_workspace_aux(_, W, Url, Name) :-
-    format(atom(Cmd), 'cd ~w; rm -rf ~w; git clone ~w ~w', [W, Name, Url, Name]),
-    shell(Cmd).
+    cmd('cd ~w; rm -rf ~w; git clone ~w ~w', [W, Name, Url, Name]).
 
 git_extract_pr(Name, Pr) :-
-    workspace(W),
-    format(atom(Cmd), 'cd ~w/~w; git-extract-pr.sh ~w', [W, Name, Pr]),
-    shell(Cmd).
+    git_workspace(Name, Dir),
+    cmd('cd ~w; git-extract-pr.sh ~w', [Dir, Pr]).
 
 mkdir(D) :-
     exists_directory(D), !.
