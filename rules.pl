@@ -3,7 +3,8 @@
 :- module(rules,
           [git/2, workspace/1, git_workspace/2, git_extract_pr/2,
            get_dlrn_fact/3, dlrn_last_bad/3, dlrn_status/3,
-           download_build_last_dlrn_src/2, download_build_dlrn_src/3
+           download_build_last_dlrn_src/2, download_build_dlrn_src/3,
+           build_pr/4
           ]).
 
 :- use_module(kb).
@@ -106,6 +107,15 @@ download_build_last_dlrn_src(Name, Branch) :-
 download_build_dlrn_src(Name, Branch, Path) :-
     dlrn_status_url(Name, Branch, Url),
     workspace(Ws),
-    cmd("download_and_build_srcrpm.sh ~w ~w ~w", [Ws, Url, Path]).
+    cmd("dlrn_download_srcrpm.sh ~w ~w ~w", [Ws, Url, Path]),
+    cmd("dlrn_build_srcrpm.sh ~w ~w", [Ws, Path]).
+
+build_pr(Name, Branch, Path, Pr) :-
+    dlrn_status_url(Name, Branch, Url),
+    workspace(Ws),
+    cmd("dlrn_download_srcrpm.sh ~w ~w ~w", [Ws, Url, Path]),
+    git_extract_pr(Name, Pr),
+    cmd("dlrn_inject_patch.sh ~w ~w ~w/~w/pr-~w.patch", [Ws, Path, Ws, Name, Pr]),
+    cmd("dlrn_build_srcrpm.sh ~w ~w/SRPMS", [Ws, Path]).
 
 %% rules.pl ends here
