@@ -67,13 +67,13 @@ extract_dlrn_table_data([Row|Rows], [Data|Rest]) :-
 
 extract_dlrn_table_data([], []).
 
-extract_dlrn_row_data(Row, [success, Url]) :-
+extract_dlrn_row_data(Row, [success, Urls]) :-
     xpath:element_attributes(Row, [class=success]),
-    xpath(Row, //a(@href), Url).
+    findall(Url, xpath(Row, //a(@href), Url), Urls).
 
-extract_dlrn_row_data(Row, [failure, Url]) :-
+extract_dlrn_row_data(Row, [failure, Urls]) :-
     xpath:element_attributes(Row, []),
-    xpath(Row, //a(@href), Url).
+    findall(Url, xpath(Row, //a(@href), Url), Urls).
 
 dlrn_last_bad(Name, Branch, Sha1) :-
     world:dlrn_info(Name, Branch, Info),
