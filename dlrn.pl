@@ -12,6 +12,7 @@
 
 :- use_module(kb).
 :- use_module(world).
+:- use_module(discuss).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% fact updater
@@ -86,6 +87,30 @@ dlrn_find_last_bad_aux([[failure, _]|Rest], B) :-
 basename(Name, Base) :-
     split_string(Name, "/", "", List),
     last(List, Base).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% communication predicates
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+dlrn_answer(Text, Nick, Answer) :-
+    split_string(Text, " ", "", List),
+    member("dlrn", List),
+    dlrn_status(Name, Branch, Status),
+    member(Name, List),
+    format(atom(Answer), "~w: ~w ~w ~w", [Nick, Name, Branch, Status]).
+
+dlrn_answer(Text, Nick, Answer) :-
+    split_string(Text, " ", "", List),
+    member("dlrn", List),
+    findall(Str, dlrn_answer(Str), Res),
+    string_join(', ', Res, Concat),
+    format(atom(Answer), "~w: ~w", [Nick, Concat]).
+
+dlrn_answer(Answer) :-
+    dlrn_status(Name, Branch, Status),
+    format(atom(Answer), "~w ~w ~w", [Name, Branch, Status]).
+
+:- add_answerer(dlrn:dlrn_answer).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% action predicates
