@@ -4,7 +4,7 @@
           [git/2, workspace/1, git_workspace/2, git_extract_pr/2,
            get_dlrn_fact/3, dlrn_last_bad/3, dlrn_status/3,
            download_build_last_dlrn_src/2, download_build_dlrn_src/3,
-           build_pr/4, distgit_workspace/2
+           build_pr/4, distgit_workspace/2, publish_patch/3
           ]).
 
 :- use_module(kb).
@@ -125,5 +125,17 @@ build_pr(Name, Branch, Path, Pr) :-
     git_extract_pr(Name, Pr),
     cmd("dlrn_inject_patch.sh ~w ~w ~w/~w/pr-~w.patch", [Ws, Path, Ws, Name, Pr]),
     cmd("dlrn_build_srcrpm.sh ~w ~w/SRPMS", [Ws, Path]).
-    
+
+publish_patch(Name, Branch, Pr) :-
+    workspace(Ws),
+    distgit_workspace(Name, Dir),
+    string_concat("rpm-", Branch, DistGitBranch),
+    cmd("dlrn_publish_patch.sh ~w ~w/~w/pr-~w.patch ~w", [Dir, Ws, Name, Pr, DistGitBranch]).
+
+remove_patch(Name, Branch, Pr) :-
+    workspace(Ws),
+    distgit_workspace(Name, Dir),
+    string_concat("rpm-", Branch, DistGitBranch),
+    cmd("dlrn_unpublish_patch.sh ~w pr-~w.patch ~w", [Dir, Ws, Name, Pr, DistGitBranch]).
+
 %% rules.pl ends here
