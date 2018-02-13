@@ -9,6 +9,6 @@ fi
 
 export PATH=$CURDIR/tools:$PATH
 
-exec swipl -q -s load.pl -g update_facts
+exec swipl -q -s load.pl -g get_facts
 
 # bot.sh ends here
