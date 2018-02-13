@@ -99,7 +99,7 @@ extract_dlrn_row_data(Row, [failure, Urls]) :-
     findall(Url, xpath(Row, //a(@href), Url), Urls).
 
 dlrn_last_bad(Name, Branch, Sha1) :-
-    world:dlrn_info(Name, Branch, Info),
+    world:fact(dlrn_info(Name, Branch, Info)),
     dlrn_find_last_bad_aux(Info, Sha1).
 
 dlrn_find_last_bad_aux([[failure,Fail],[success, _]|_], Sha1) :-
@@ -114,10 +114,10 @@ basename(Name, Base) :-
     last(List, Base).
 
 dlrn_status(Name, Branch, Status) :-
-    world:dlrn_info(Name, Branch, [[Status,_]|_]).
+    world:fact(dlrn_info(Name, Branch, [[Status,_]|_])).
 
 download_build_last_dlrn_src(Name, Branch) :-
-    world:dlrn_info(Name, Branch, [[_,[_,Path,_]]|_]),
+    world:fact(dlrn_info(Name, Branch, [[_,[_,Path,_]]|_])),
     download_dlrn_build_src(Name, Branch, Path).
 
 download_build_dlrn_src(Name, Branch, Path) :-
