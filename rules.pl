@@ -7,10 +7,18 @@
            build_pr/4, distgit_workspace/2, publish_patch/3
           ]).
 
-:- use_module(kb).
-
 :- use_module(library(http/http_open)).
 :- use_module(library(xpath)).
+
+:- use_module(kb).
+:- use_module(world).
+
+update_dlrn_facts() :-
+    dlrn_status_url(Name, Branch, _),
+    get_dlrn_fact(Name, Branch, Info),
+    update_fact(dlrn_info(Name, Branch, Info)).
+
+:- add_fact_updater(rules:update_dlrn_facts).
 
 git(Name, GitUrl) :-
     gitrepo(Name, GitUrl),

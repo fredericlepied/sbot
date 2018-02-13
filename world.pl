@@ -1,23 +1,22 @@
 %% -*- prolog -*-
 
-:- module(world, [update_facts/0]).
+:- module(world, [update_facts/0, update_fact/1, add_fact_updater/1]).
 
-:- use_module(rules).
-:- use_module(kb).
+:- dynamic fact, fact_updater.
 
-:- dynamic dlrn_info.
+update_fact(Fact) :-
+    asserta(fact(Fact)).
+
+add_fact_updater(Updater) :-
+    asserta(fact_updater(Updater)).
 
 update_facts() :-
-    update_dlrn_facts.
-
-update_dlrn_facts() :-
-    retractall(dlrn_info(_,_,_)),
-    dlrn_status_url(Name, Branch, _),
-    get_dlrn_fact(Name, Branch, Info),
-    asserta(dlrn_info(Name, Branch, Info)),
+    retractall(fact(_)),
+    fact_updater(Updater),
+    Updater,
     fail.
 
-update_dlrn_facts() :-
+update_facts() :-
     true.
 
 %% world.pl ends here
