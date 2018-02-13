@@ -9,16 +9,16 @@
 
 process_message(Id, Server, "PRIVMSG", Params, Text) :-
     member("sbot", Params),
-    prefix_id(Server, Nick, U, H),
+    prefix_id(Server, Nick, _, _),
     private_message(Id, Text, Nick).
     
 process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
     split_string(Text, " ", "@:", S),
     member("sbot", S),
-    prefix_id(Server, Nick, U, H),
+    prefix_id(Server, Nick, _, _),
     public_message(Id, Text, Nick, Param).
 
-process_message(Id, Server, Code, Params, Text).
+process_message(_, _, _, _, _).
 
 private_message(Id, Text, Nick) :-
     answer(Text, Nick, Answer),
@@ -44,12 +44,12 @@ answer(Text, Nick, Answer) :-
     format(atom(Answer), "~w ~w", [Elt, Nick]),
     !.
 
-answer(Text, Nick, Answer) :-
+answer(_, Nick, Answer) :-
     format(atom(Answer), "~w: not understood", [Nick]).
 
 string_join(_, [], "").
 
-string_join(Sep, [Single], Single) :-
+string_join(_, [Single], Single) :-
     !.
 
 string_join(Sep, [First|Rest], Res) :-
@@ -58,3 +58,4 @@ string_join(Sep, [First|Rest], Res) :-
     string_concat(FirstSep, RestTxt, Res),
     !.
 
+%% discuss.pl ends here
