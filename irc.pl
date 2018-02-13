@@ -38,8 +38,7 @@ output(Id-Msg) :-
 	% The third argument is a variable list of strings that represent specific
 	% IRC parameters
     Msg = msg(Server, Code, Params, Text),
-    discuss:process_message(Id, Server, Code, Params, Text),
-    format("~s: ~s ~s ~w ~s~n", [Id, Server, Code, Params, Text]).
+    discuss:process_message(Id, Server, Code, Params, Text).
 
 echo_connected(Id-Msg) :-
 	% Every incoming message relayed by the server takes the form of a pair ...
