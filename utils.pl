@@ -9,7 +9,7 @@ cmd(Fmt, Args) :-
     format(atom(Cmd), Fmt, Args),
     string_concat("+ ", Cmd, StrCmd),
     writeln(StrCmd),
-    shell(Cmd).
+    shell(Cmd, 0).
 
 cmd(Fmt, Args, OutputLines) :-
     format(atom(Cmd), Fmt, Args),
