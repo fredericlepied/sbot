@@ -18,10 +18,10 @@
 %% fact updater
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-update_dlrn_facts() :-
+update_dlrn_facts(Gen) :-
     dlrn_status_url(Name, Branch, _),
     get_dlrn_fact(Name, Branch, Info),
-    update_fact(dlrn_info(Name, Branch, Info)).
+    update_fact(Gen, dlrn_info(Name, Branch, Info)).
 
 :- add_fact_updater(dlrn:update_dlrn_facts).
 
@@ -29,9 +29,9 @@ update_dlrn_facts() :-
 %% fact deducer
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-deduce_dlrn_facts() :-
+deduce_dlrn_facts(Gen) :-
     dlrn_status(Name, Branch, failure),
-    update_fact(dlrn_problem(Name, Branch)).
+    update_fact(Gen, dlrn_problem(Name, Branch)).
 
 :- add_fact_deducer(dlrn:deduce_dlrn_facts).
 
@@ -40,7 +40,7 @@ deduce_dlrn_facts() :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 dlrn_status(Name, Branch, Status) :-
-    world:fact(dlrn_info(Name, Branch, [[Status,_]|_])).
+    get_fact(dlrn_info(Name, Branch, [[Status,_]|_])).
 
 get_dlrn_fact(Name, Branch, Info) :-
     get_dlrn_dom(Name, Branch, Dom),
@@ -74,7 +74,7 @@ extract_dlrn_row_data(Row, [failure, Urls]) :-
     findall(Url, xpath(Row, //a(@href), Url), Urls).
 
 dlrn_last_bad(Name, Branch, Sha1) :-
-    world:fact(dlrn_info(Name, Branch, Info)),
+    get_fact(dlrn_info(Name, Branch, Info)),
     dlrn_find_last_bad_aux(Info, Sha1).
 
 dlrn_find_last_bad_aux([[failure,Fail],[success, _]|_], Sha1) :-
@@ -164,7 +164,7 @@ mkdir(D) :-
     make_directory(D).
 
 download_build_last_dlrn_src(Name, Branch) :-
-    world:fact(dlrn_info(Name, Branch, [[_,[_,Path,_]]|_])),
+    get_fact(dlrn_info(Name, Branch, [[_,[_,Path,_]]|_])),
     download_dlrn_build_src(Name, Branch, Path).
 
 download_build_dlrn_src(Name, Branch, Path) :-

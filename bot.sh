@@ -10,9 +10,9 @@ fi
 export PATH=$CURDIR/tools:$PATH
 
 if [ "$1" = -d ]; then
-    exec swipl -q -s load.pl -g get_facts
+    exec swipl -q -s load.pl
 else
-    exec swipl -q -s load.pl -s irc.pl -g run
+    exec swipl -q -s load.pl -s irc.pl -g fact_loop
 fi
 
 # bot.sh ends here

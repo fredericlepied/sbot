@@ -1,12 +1,16 @@
 %% -*- prolog -*-
 
-:- module(world, [get_facts/0, update_facts/0, update_fact/1,
-                  add_fact_updater/1, add_fact_deducer/1, run/0]).
+:- module(world, [get_facts/0, update_fact/2, add_fact_updater/1,
+                  add_fact_deducer/1, fact_loop/0, get_fact/1]).
 
-:- dynamic fact, fact_updater, fact_deducer.
+:- dynamic fact, fact_updater, fact_deducer, last_gen.
 
-update_fact(Fact) :-
-    asserta(fact(Fact)).
+get_fact(Fact) :-
+    last_gen(Gen),
+    fact(Gen, Fact).
+
+update_fact(Gen, Fact) :-
+    asserta(fact(Gen, Fact)).
 
 add_fact_updater(Updater) :-
     asserta(fact_updater(Updater)).
@@ -14,35 +18,49 @@ add_fact_updater(Updater) :-
 add_fact_deducer(Deducer) :-
     asserta(fact_deducer(Deducer)).
 
-update_facts() :-
-    retractall(fact(_)),
+update_facts(Gen) :-
     fact_updater(Updater),
-    Updater,
+    call(Updater, Gen),
     fail.
 
-update_facts() :-
+update_facts(_) :-
     true.
 
-deduce_facts() :-
+deduce_facts(Gen) :-
     fact_deducer(Deducer),
-    Deducer,
+    call(Deducer, Gen),
     fail.
 
-deduce_facts() :-
+deduce_facts(_) :-
     true.
+
+get_facts(Gen) :-
+    format('Updating facts for gen ~w~n', [Gen]),
+    update_facts(Gen),
+    format('Deducing facts for gen ~w~n', [Gen]),
+    deduce_facts(Gen).
 
 get_facts :-
-    writeln('Updating facts'),
-    update_facts,
-    writeln('deducing facts'),
-    deduce_facts.
+    asserta(last_gen(1)),
+    get_facts(1).
 
-run :-
+fact_loop :-
+    asserta(last_gen(1)),
     thread_create(forever, _, [detached(true), alias(bg)]).
 
 forever :-
     repeat,
-    get_facts,
+    between(1, inf, Gen),
+    catch(
+        get_facts(Gen),
+	Err,
+	print_message(error, Err)
+    ),
+    retractall(last_gen(_)),
+    asserta(last_gen(Gen)),
+    % Keep only the previous generation of facts
+    Prev is Gen - 2,
+    retractall(fact(Prev,_)),
     sleep(300),
     fail.
 
