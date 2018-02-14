@@ -37,6 +37,21 @@ deduce_dlrn_facts(Gen) :-
 :- add_fact_deducer(dlrn:deduce_dlrn_facts).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% fact solver
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+dlrn_solver(_) :-
+    get_fact(dlrn_problem(Name, Branch)),
+    get_fact(dlrn_reproduced(Name, Branch)).
+
+dlrn_solver(Gen) :-
+    get_fact(dlrn_problem(Name, Branch)),
+    not(download_build_last_dlrn_src(Name, Branch)),
+    update_fact(Gen, dlrn_reproduced(Name, Branch)).
+
+:- add_fact_solver(dlrn:dlrn_solver).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% status predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

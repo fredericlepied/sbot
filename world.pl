@@ -1,13 +1,19 @@
 %% -*- prolog -*-
 
 :- module(world, [get_facts/0, update_fact/2, add_fact_updater/1,
-                  add_fact_deducer/1, fact_loop/0, get_fact/1]).
+                  add_fact_deducer/1, add_fact_solver/1, fact_loop/0,
+                  get_fact/1, get_old_fact/1]).
 
-:- dynamic fact, fact_updater, fact_deducer, last_gen.
+:- dynamic fact, fact_updater, fact_deducer, fact_solver, last_gen.
 
 get_fact(Fact) :-
     last_gen(Gen),
     fact(Gen, Fact).
+
+get_old_fact(Fact) :-
+    last_gen(Gen),
+    OldGen is Gen - 1,
+    fact(OldGen, Fact).
 
 update_fact(Gen, Fact) :-
     asserta(fact(Gen, Fact)).
@@ -17,6 +23,9 @@ add_fact_updater(Updater) :-
 
 add_fact_deducer(Deducer) :-
     asserta(fact_deducer(Deducer)).
+
+add_fact_solver(Solver) :-
+    asserta(fact_solver(Solver)).
 
 update_facts(Gen) :-
     fact_updater(Updater),
@@ -34,11 +43,21 @@ deduce_facts(Gen) :-
 deduce_facts(_) :-
     true.
 
+solve_facts(Gen) :-
+    fact_solver(Solver),
+    call(Solver, Gen),
+    fail.
+
+solve_facts(_) :-
+    true.
+
 get_facts(Gen) :-
     format('Updating facts for gen ~w~n', [Gen]),
     update_facts(Gen),
     format('Deducing facts for gen ~w~n', [Gen]),
-    deduce_facts(Gen).
+    deduce_facts(Gen),
+    format('Solving facts for gen ~w~n', [Gen]),
+    solve_facts(Gen).
 
 get_facts :-
     asserta(last_gen(1)),
