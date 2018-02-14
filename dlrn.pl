@@ -13,6 +13,7 @@
 :- use_module(kb).
 :- use_module(world).
 :- use_module(discuss).
+:- use_module(utils).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% fact updater
@@ -128,12 +129,6 @@ workspace(W) :-
     getenv("HOME", Home),
     string_concat(Home, "/workspace", W),
     mkdir(W).
-
-cmd(Fmt, Args) :-
-    format(atom(Cmd), Fmt, Args),
-    string_concat("+ ", Cmd, StrCmd),
-    writeln(StrCmd),
-    shell(Cmd).
 
 distgit_workspace(Name, Dir) :-
     string_concat(Name, "-distgit", DistGitName),

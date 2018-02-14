@@ -1,6 +1,6 @@
 %% -*- prolog -*-
 
-:- module(discuss, [process_message/5, add_answerer/1, string_join/3]).
+:- module(discuss, [process_message/5, add_answerer/1]).
 
 :- use_module(library(irc_client_utilities)).
 :- use_module(library(irc_client_parser)).
@@ -46,16 +46,5 @@ answer(Text, Nick, Answer) :-
 
 answer(_, Nick, Answer) :-
     format(atom(Answer), "~w: not understood", [Nick]).
-
-string_join(_, [], "").
-
-string_join(_, [Single], Single) :-
-    !.
-
-string_join(Sep, [First|Rest], Res) :-
-    string_concat(First, Sep, FirstSep),
-    string_join(Sep, Rest, RestTxt),
-    string_concat(FirstSep, RestTxt, Res),
-    !.
 
 %% discuss.pl ends here
