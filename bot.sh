@@ -9,6 +9,8 @@ fi
 
 export PATH=$CURDIR/tools:$PATH
 
+cd $CURDIR
+
 if [ ! -r config.pl ]; then
     cp config.pl.ex config.pl
 fi
