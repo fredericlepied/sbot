@@ -63,4 +63,4 @@ connect :-
     fail.
 
 join_channels :-
-    connect('irc.devel.redhat.com', 6667, "", sbot, [host,server,real], ['#testbot']).
+    connect('irc.devel.redhat.com', 6667, "", sbot, [host,server,real], ['##testbot']).
