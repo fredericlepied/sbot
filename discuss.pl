@@ -4,17 +4,20 @@
 
 :- use_module(library(irc_client_utilities)).
 :- use_module(library(irc_client_parser)).
+:- use_module(config).
 
 :- dynamic answerer.
 
 process_message(Id, Server, "PRIVMSG", Params, Text) :-
-    member("sbot", Params),
+    config(irc_nick, IrcNick),
+    member(IrcNick, Params),
     prefix_id(Server, Nick, _, _),
     private_message(Id, Text, Nick).
-    
+
 process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
     split_string(Text, " ", "@:", S),
-    member("sbot", S),
+    config(irc_nick, IrcNick),
+    member(IrcNick, S),
     prefix_id(Server, Nick, _, _),
     public_message(Id, Text, Nick, Param).
 
