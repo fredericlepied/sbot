@@ -8,8 +8,8 @@
 
 config(irc_server, 'irc.freenode.org').
 config(irc_port, 6667).
-config(irc_nick, sbot).
-config(irc_channels, ['##testbot']).
+config(irc_nick, "sbot").
+config(irc_channels, ["##testbot"]).
 
 %% add the optional modules you want to activate to the list
 config(modules, [dlrn, irc, self]).
