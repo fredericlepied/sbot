@@ -1,14 +1,17 @@
 %% -*- prolog -*-
 
-%% activate the modules you need bellow by uncommenting them
+:- module(config,
+          [config/2
+          ]).
 
-%:- use_module(dlrn).
+%% settings for irc.pl module
 
 config(irc_server, 'irc.freenode.org').
 config(irc_port, 6667).
 config(irc_nick, sbot).
 config(irc_channels, ['##testbot']).
 
-%:- use_module(irc).
+%% add the optional modules you want to activate to the list
+config(modules, [dlrn, irc]).
 
 %% config.pl ends here
