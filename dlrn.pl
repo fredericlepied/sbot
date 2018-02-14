@@ -165,7 +165,7 @@ mkdir(D) :-
 
 download_build_last_dlrn_src(Name, Branch) :-
     get_fact(dlrn_info(Name, Branch, [[_,[_,Path,_]]|_])),
-    download_dlrn_build_src(Name, Branch, Path).
+    download_build_dlrn_src(Name, Branch, Path).
 
 download_build_dlrn_src(Name, Branch, Path) :-
     dlrn_status_url(Name, Branch, Url),

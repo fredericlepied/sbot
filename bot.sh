@@ -9,10 +9,14 @@ fi
 
 export PATH=$CURDIR/tools:$PATH
 
+if [ ! -r config.pl ]; then
+    cp config.pl.ex config.pl
+fi
+
 if [ "$1" = -d ]; then
-    exec swipl -q -s load.pl
+    exec swipl -q -s config.pl -s load.pl
 else
-    exec swipl -q -s load.pl -s irc.pl -g fact_loop
+    exec swipl -q -s config.pl -s load.pl -g world:fact_loop
 fi
 
 # bot.sh ends here

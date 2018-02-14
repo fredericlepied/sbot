@@ -4,6 +4,7 @@
 
 :- use_module(library(irc_client)).
 :- use_module(discuss).
+:- use_module(config).
 
 :- initialization
    run.
@@ -63,4 +64,8 @@ connect :-
     fail.
 
 join_channels :-
-    connect('irc.devel.redhat.com', 6667, "", sbot, [host,server,real], ['##testbot']).
+    config(irc_server, IrcServer),
+    config(irc_port, IrcPort),
+    config(irc_nick, IrcNick),
+    config(irc_channels, IrcChannels),
+    connect(IrcServer, IrcPort, "", IrcNick, [host,server,real], IrcChannels).
