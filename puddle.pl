@@ -16,8 +16,9 @@
 
 update_puddle_facts(Gen) :-
     config(puddle, [Product, Version, Url]),
-    get_puddle_fact(Version, Url, PuddleInfo),
-    update_fact(Gen, puddle_info(Product, Version, Url, PuddleInfo)).
+    get_puddle_fact(Version, Url, Type, Puddle),
+    string_concat(Product, Version, ProdVer),
+    update_fact(Gen, puddle_info(ProdVer, Url, Type, Puddle)).
 
 :- add_fact_updater(puddle:update_puddle_facts).
 
@@ -25,64 +26,60 @@ update_puddle_facts(Gen) :-
 %% status predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-puddle_status(Product, Version, Url, RepoFile) :-
-    get_fact(puddle_info(Product, Version, Url, [[_,_,_,_], RepoFile])).
+get_puddle_fact(Version, Url, Type, Puddle) :-
+    member(Type, ["latest", "passed_dci", "passed_phase1", "passed_phase2"]),
+    format(string(Product), "RH7-RHOS-~w.0", [Version]),
+    format(string(RepoUrl), "~w/~w/~w.repo", [Url, Type, Product]),
+    http_get(RepoUrl, Repo, [status_code(Code)]),
+    Code == 200,
+    get_puddle_from_repo(Product, Repo, Puddle).
 
-puddle_summary(Product, Version, Url, Latest, PassedDCI, PassedPhase1, PassedPhase2) :-
-    get_fact(puddle_info(Product, Version, Url, [[Latest, PassedDCI, PassedPhase1, PassedPhase2],_])).
+get_puddle_from_repo(Product, Repo, Puddle) :-
+    split_string(Repo, "\n", "", Lines),
+    member(Line, Lines),
+    find_puddle(Product, Line, Puddle),
+    !.
 
-get_puddle_fact(Version, Url, PuddleInfo) :-
-    get_puddle_name(Url, PassedUrls),
-    get_puddle_repo_file(Version, Url, RepoFile),
-    PuddleInfo = [PassedUrls, RepoFile].
+find_puddle(Product, Line, Puddle) :-
+    split_string(Line, "=", "", ["baseurl", Url]),
+    split_string(Url, "/", "", Parts),
+    lookup_product(Product, Parts, Puddle).
 
-get_puddle_repo_file(Version, Url, RepoFile) :-
-    format(atom(RepoFile), "~w/latest/RH7-RHOS-~w.0.repo", [Url, Version]).
+lookup_product(Product, [Puddle, Product|_], Puddle) :-
+    !.
 
-get_puddle_name(Url, PassedUrls) :-
-    format(atom(Latest), "~w/latest/COMPOSE_ID", [Url]),
-    format(atom(PassedDCI), "~w/passed_dci/COMPOSE_ID", [Url]),
-    format(atom(PassedPhase1), "~w/passed_phase1/COMPOSE_ID", [Url]),
-    format(atom(PassedPhase2), "~w/passed_phase2/COMPOSE_ID", [Url]),
-    http_get(Latest, InLatest, []),
-    http_get(PassedDCI, InPassedDCI, []),
-    http_get(PassedPhase1, InPassedPhase1, []),
-    http_get(PassedPhase2, InPassedPhase2, []),
-    PassedUrls = [InLatest, InPassedDCI, InPassedPhase1, InPassedPhase2].
+lookup_product(Product, [_|Rest], Puddle) :-
+    lookup_product(Product, Rest, Puddle).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% communication predicates
+%% Communication predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% puddle OSP10 summary
-puddle_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", List),
-    member("puddle", List),
-    member("summary", List),
-    puddle_summary(Product, Version, Url, Latest, PassedDCI, PassedPhase1, PassedPhase2),
-    string_concat(Product, Version, OSPVersion),
-    member(OSPVersion, List),
-    format(atom(Answer), "~w: Summary for ~w (~w)~nLatest: ~w~nPassed DCI: ~w~nPassed Phase1: ~w~nPassed Phase2: ~w~n", [Nick, OSPVersion, Url, Latest, PassedDCI, PassedPhase1, PassedPhase2]).
 
 % puddle OSP10
 puddle_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", List),
-    member("puddle", List),
-    puddle_status(Product, Version, _, RepoFile),
-    string_concat(Product, Version, OSPVersion),
-    member(OSPVersion, List),
-    format(atom(Answer), "~w:  ~w~w ~w", [Nick, Product, Version, RepoFile]).
+    split_string(Text, " ", "", ["puddle", ProdVer]),
+    findall(Type, get_fact(puddle_info(ProdVer, _, Type, _)), Types),
+    string_join(", ", Types, TypesText),
+    format(string(Answer), "~w: ~w ~w", [Nick, ProdVer, TypesText]).
+
+% puddle OSP10 latest
+puddle_answer(Text, Nick, Answer) :-
+    split_string(Text, " ", "", ["puddle", ProdVer, Type]),
+    get_fact(puddle_info(ProdVer, Url, Type, Puddle)),
+    format(string(Answer), "~w: ~w ~w is ~w ~w~w", [Nick, ProdVer, Type, Puddle, Url, Puddle]).
+
+puddle_answer(Text, Nick, Answer) :-
+    split_string(Text, " ", "", ["puddle", ProdVer, Type]),
+    format(string(Answer), "~w: ~w ~w does not exist", [Nick, ProdVer, Type]).
 
 % puddle
 puddle_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", List),
-    member("puddle", List),
-    findall(Str, puddle_answer(Str), Res),
-    string_join(', ', Res, Concat),
-    format(atom(Answer), "~w: Available puddles: ~w", [Nick, Concat]).
-
-puddle_answer(Answer) :-
-    puddle_status(Product, Version, _, _),
-    format(atom(Answer), "~w~w", [Product, Version]).
+    split_string(Text, " ", "", ["puddle"]),
+    findall(ProdVer, get_fact(puddle_info(ProdVer, _, _, _)), ProdVers),
+    sort(ProdVers, Prods),
+    string_join(", ", Prods, ProdText),
+    format(string(Answer), "~w: available puddles: ~w", [Nick, ProdText]).
 
 :- add_answerer(puddle:puddle_answer).
+
+%% puddle.pl ends here
