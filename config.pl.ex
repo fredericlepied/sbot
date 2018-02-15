@@ -12,6 +12,6 @@ config(irc_nick, "sbot").
 config(irc_channels, ["##testbot"]).
 
 %% add the optional modules you want to activate to the list
-config(modules, [dlrn, irc, self, autoupdate, github]).
+config(modules, [dlrn, irc, self, autoupdate, github, puddle]).
 
 %% config.pl ends here
