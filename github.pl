@@ -18,7 +18,12 @@ update_github_facts(Gen) :-
     get_longterm_fact(github_track_pr(Owner, Project, Pr, _)),
     github_pr(Owner, Project, Pr, Dict),
     update_fact(Gen, github_pr_sha(Owner, Project, Pr, Dict.head.sha)),
-    update_fact(Gen, github_pr_html(Owner, Project, Pr, Dict.'_links'.html.href)).
+    update_fact(Gen, github_pr_html(Owner, Project, Pr, Dict.'_links'.html.href)),
+    merge_status(Dict.merged, Status),
+    update_fact(Gen, github_pr_merged(Owner, Project, Pr, Status)).
+
+merge_status(false, no).
+merge_status(true, yes).
 
 :- add_fact_updater(github:update_github_facts).
 
@@ -44,6 +49,16 @@ github_solver(_) :-
     get_fact(github_pr_html(Owner, Project, Pr, Url)),
     config(irc_channels, [Chan|_]),
     format(atom(Text), "~w: Github PR ~w updated (~w)", [Requester, Url, Sha]),
+    %% todo(fl) need to remove hardcoded id
+    notify(irc, Text, Chan).
+
+github_solver(_) :-
+    get_longterm_fact(github_track_pr(Owner, Project, Pr, Requester)),
+    get_fact(github_pr_merged(Owner, Project, Pr, yes)),
+    get_old_fact(github_pr_merged(Owner, Project, Pr, no)),
+    get_fact(github_pr_html(Owner, Project, Pr, Url)),
+    config(irc_channels, [Chan|_]),
+    format(atom(Text), "~w: Github PR ~w merged", [Requester, Url]),
     %% todo(fl) need to remove hardcoded id
     notify(irc, Text, Chan).
 

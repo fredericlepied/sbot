@@ -22,7 +22,6 @@ process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
     config(irc_nick, IrcNick),
     member(IrcNick, S),
     delete(S, IrcNick, CleanList1),
-    writeln(CleanList1),
     delete(CleanList1, "", CleanList),
     prefix_id(Server, Nick, _, _),
     public_message(Id, CleanList, Nick, Param).
