@@ -6,7 +6,11 @@
                   get_longterm_fact/1, last_gen/1, remove_longterm_fact/1
                  ]).
 
-:- dynamic fact/2, fact_updater/1, fact_deducer/1, fact_solver/1, last_gen/1.
+:- use_module(library(persistency)).
+
+:- dynamic fact/2, longterm/1, fact_updater/1, fact_deducer/1, fact_solver/1, last_gen/1.
+
+:- include('save.pl').
 
 get_fact(Fact) :-
     last_gen(Gen),
@@ -18,7 +22,7 @@ get_old_fact(Fact) :-
     fact(OldGen, Fact).
 
 get_longterm_fact(Fact) :-
-    fact(-1, Fact).
+    longterm(Fact).
 
 update_fact(Gen, Fact) :-
     fact(Gen, Fact),
@@ -28,14 +32,14 @@ update_fact(Gen, Fact) :-
     asserta(fact(Gen, Fact)).
 
 update_longterm_fact(Fact) :-
-    fact(-1, Fact),
+    longterm(Fact),
     !.
 
 update_longterm_fact(Fact) :-
-    asserta(fact(-1, Fact)).
+    asserta(longterm(Fact)).
 
 remove_longterm_fact(Fact) :-
-    retractall(fact(-1, Fact)).
+    retractall(longterm(Fact)).
 
 add_fact_updater(Updater) :-
     fact_updater(Updater),
@@ -94,7 +98,8 @@ get_facts(Gen) :-
     format('Deducing facts for gen ~w~n', [Gen]),
     deduce_facts(Gen),
     format('Solving facts for gen ~w~n', [Gen]),
-    solve_facts(Gen).
+    solve_facts(Gen),
+    tell('save.pl'), listing(longterm/1), told.
 
 get_facts :-
     asserta(last_gen(1)),

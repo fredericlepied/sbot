@@ -15,6 +15,10 @@ if [ ! -r config.pl ]; then
     cp config.pl.ex config.pl
 fi
 
+if [ ! -r save.pl ]; then
+    touch save.pl
+fi
+
 if [ "$1" = -d ]; then
     exec swipl -q -s config.pl -s load.pl
 else
