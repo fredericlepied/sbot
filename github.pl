@@ -54,23 +54,20 @@ github_solver(_) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % github help
-github_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", List),
+github_answer(List, Nick, Answer) :-
     member("github", List),
     member("help", List),
     format(atom(Answer), "~w: github trackpr <owner> <project> <pr>~ngithub trackpr: list all the tracked PR", [Nick]).
 
 % github trackpr ansible ansible 35917
-github_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", ["github", "trackpr", Owner, Project, Pr]),
+github_answer(["github", "trackpr", Owner, Project, Pr], Nick, Answer) :-
     update_longterm_fact(github_track_pr(Owner, Project, Pr, Nick)),
     last_gen(Gen), update_github_facts(Gen),
     get_fact(github_pr_html(Owner, Project, Pr, Url)),
     format(atom(Answer), "~w: tracking PR ~w", [Nick, Url]).
 
 % github trackpr
-github_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", ["github", "trackpr"]),
+github_answer(["github", "trackpr"], Nick, Answer) :-
     findall(Url, get_fact(github_pr_html(_, _, _, Url)), Urls),
     string_join(" ", Urls, TextUrls),
     format(atom(Answer), "~w: tracking PR ~w", [Nick, TextUrls]).

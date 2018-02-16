@@ -109,23 +109,20 @@ basename(Name, Base) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % dlrn help
-dlrn_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", List),
+dlrn_answer(List, Nick, Answer) :-
     member("dlrn", List),
     member("help", List),
     format(atom(Answer), "~w: dlrn: display the status of all the DLRN instances.~ndlrn <package>: display DLRN status for this package.", [Nick]).
 
 % dlrn ansible
-dlrn_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", List),
+dlrn_answer(List, Nick, Answer) :-
     member("dlrn", List),
     dlrn_status(Name, Branch, Status),
     member(Name, List),
     format(atom(Answer), "~w: ~w ~w ~w", [Nick, Name, Branch, Status]).
 
 % dlrn
-dlrn_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", List),
+dlrn_answer(List, Nick, Answer) :-
     member("dlrn", List),
     findall(Str, dlrn_answer(Str), Res),
     string_join(', ', Res, Concat),

@@ -10,48 +10,49 @@
 :- dynamic answerer/1.
 
 process_message(Id, Server, "PRIVMSG", Params, Text) :-
+    split_string(Text, " ", "@:.,", S),
+    delete(S, "", CleanList),
     config(irc_nick, IrcNick),
     member(IrcNick, Params),
     prefix_id(Server, Nick, _, _),
-    private_message(Id, Text, Nick).
+    private_message(Id, CleanList, Nick).
 
 process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
-    split_string(Text, " ", "@:", S),
+    split_string(Text, " ", "@:.,", S),
     config(irc_nick, IrcNick),
     member(IrcNick, S),
-    delete(S, IrcNick, CleanList),
-    string_join(" ", CleanList, NewText),
+    delete(S, IrcNick, CleanList1),
+    writeln(CleanList1),
+    delete(CleanList1, "", CleanList),
     prefix_id(Server, Nick, _, _),
-    public_message(Id, NewText, Nick, Param).
+    public_message(Id, CleanList, Nick, Param).
 
 process_message(_, _, _, _, _).
 
-private_message(Id, Text, Nick) :-
-    answer(Text, Nick, Answer),
+private_message(Id, TextList, Nick) :-
+    answer(TextList, Nick, Answer),
     priv_msg(Id, Answer, Nick).
 
-public_message(Id, Text, Nick, Chan) :-
-    answer(Text, Nick, Answer),
+public_message(Id, TextList, Nick, Chan) :-
+    answer(TextList, Nick, Answer),
     priv_msg(Id, Answer, Chan).
 
 add_answerer(Pred) :-
     asserta(answerer(Pred)).
 
-answer(Text, Nick, Answer) :-
+answer(TextList, Nick, Answer) :-
     answerer(Pred),
-    call(Pred, Text, Nick, Answer),
+    call(Pred, TextList, Nick, Answer),
     !.
 
-answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", List),
+answer(List, Nick, Answer) :-
     member(Elt, List),
     string_upper(Elt, UpperElt),
     member(UpperElt, ["HI", "HELLO"]),
     format(atom(Answer), "~w ~w", [Elt, Nick]),
     !.
 
-answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", [Help]),
+answer([Help], Nick, Answer) :-
     string_lower(Help, "help"),
     config(modules, List),
     delete(List, irc, Removed),

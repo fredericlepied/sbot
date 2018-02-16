@@ -56,32 +56,27 @@ lookup_product(Product, [_|Rest], Puddle) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % puddle help
-puddle_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", List),
+puddle_answer(List, Nick, Answer) :-
     member("puddle", List),
     member("help", List),
     format(atom(Answer), "~w: puddle: display the list of available puddles.~npuddle <puddle>: display the list of aliases for this puddle.~npuddle <puddle> <alias>: display the real puddle name for this alias and its URL.", [Nick]).
 
 % puddle OSP10
-puddle_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", ["puddle", ProdVer]),
+puddle_answer(["puddle", ProdVer], Nick, Answer) :-
     findall(Type, get_fact(puddle_info(ProdVer, _, Type, _)), Types),
     string_join(", ", Types, TypesText),
     format(string(Answer), "~w: ~w ~w", [Nick, ProdVer, TypesText]).
 
 % puddle OSP10 latest
-puddle_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", ["puddle", ProdVer, Type]),
+puddle_answer(["puddle", ProdVer, Type], Nick, Answer) :-
     get_fact(puddle_info(ProdVer, Url, Type, Puddle)),
     format(string(Answer), "~w: ~w ~w is ~w ~w~w", [Nick, ProdVer, Type, Puddle, Url, Puddle]).
 
-puddle_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", ["puddle", ProdVer, Type]),
+puddle_answer(["puddle", ProdVer, Type], Nick, Answer) :-
     format(string(Answer), "~w: ~w ~w does not exist", [Nick, ProdVer, Type]).
 
 % puddle
-puddle_answer(Text, Nick, Answer) :-
-    split_string(Text, " ", "", ["puddle"]),
+puddle_answer(["puddle"], Nick, Answer) :-
     findall(ProdVer, get_fact(puddle_info(ProdVer, _, _, _)), ProdVers),
     sort(ProdVers, Prods),
     string_join(", ", Prods, ProdText),
