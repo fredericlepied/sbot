@@ -56,31 +56,30 @@ lookup_product(Product, [_|Rest], Puddle) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % puddle help
-puddle_answer(List, Nick, Answer) :-
+puddle_answer(List, _, "puddle: display the list of available puddles.~npuddle <puddle>: display the list of aliases for this puddle.~npuddle <puddle> <alias>: display the real puddle name for this alias and its URL.") :-
     member("puddle", List),
-    member("help", List),
-    format(atom(Answer), "~w: puddle: display the list of available puddles.~npuddle <puddle>: display the list of aliases for this puddle.~npuddle <puddle> <alias>: display the real puddle name for this alias and its URL.", [Nick]).
+    member("help", List).
 
 % puddle OSP10
-puddle_answer(["puddle", ProdVer], Nick, Answer) :-
+puddle_answer(["puddle", ProdVer], _, Answer) :-
     findall(Type, get_fact(puddle_info(ProdVer, _, Type, _)), Types),
     string_join(", ", Types, TypesText),
-    format(string(Answer), "~w: ~w ~w", [Nick, ProdVer, TypesText]).
+    format(string(Answer), "~w ~w", [ProdVer, TypesText]).
 
 % puddle OSP10 latest
-puddle_answer(["puddle", ProdVer, Type], Nick, Answer) :-
+puddle_answer(["puddle", ProdVer, Type], _, Answer) :-
     get_fact(puddle_info(ProdVer, Url, Type, Puddle)),
-    format(string(Answer), "~w: ~w ~w is ~w ~w~w", [Nick, ProdVer, Type, Puddle, Url, Puddle]).
+    format(string(Answer), "~w ~w is ~w ~w~w", [ProdVer, Type, Puddle, Url, Puddle]).
 
-puddle_answer(["puddle", ProdVer, Type], Nick, Answer) :-
-    format(string(Answer), "~w: ~w ~w does not exist", [Nick, ProdVer, Type]).
+puddle_answer(["puddle", ProdVer, Type], _, Answer) :-
+    format(string(Answer), "~w ~w does not exist", [ProdVer, Type]).
 
 % puddle
-puddle_answer(["puddle"], Nick, Answer) :-
+puddle_answer(["puddle"], _, Answer) :-
     findall(ProdVer, get_fact(puddle_info(ProdVer, _, _, _)), ProdVers),
     sort(ProdVers, Prods),
     string_join(", ", Prods, ProdText),
-    format(string(Answer), "~w: available puddles: ~w", [Nick, ProdText]).
+    format(string(Answer), "available puddles: ~w", [ProdText]).
 
 :- add_answerer(puddle:puddle_answer).
 

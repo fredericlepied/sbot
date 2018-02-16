@@ -19,15 +19,14 @@ self_version(Version) :-
 %% communication predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-self_answer(List, Nick, Answer) :-
+self_answer(List, _, "version: display the version of my source code.") :-
     member("self", List),
-    member("help", List),
-    format(atom(Answer), "~w: version: display the version of my source code.", [Nick]).
+    member("help", List).
 
 self_answer(List, Nick, Answer) :-
     member("version", List),
     self_version(Version),
-    format(atom(Answer), "~w: version ~w", [Nick, Version]).
+    format(string(Answer), "version ~w", [Version]).
 
 :- add_answerer(self:self_answer).
 

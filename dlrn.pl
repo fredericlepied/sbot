@@ -109,28 +109,26 @@ basename(Name, Base) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % dlrn help
-dlrn_answer(List, Nick, Answer) :-
+dlrn_answer(List, _, "~w: dlrn: display the status of all the DLRN instances.~ndlrn <package>: display DLRN status for this package.") :-
     member("dlrn", List),
-    member("help", List),
-    format(atom(Answer), "~w: dlrn: display the status of all the DLRN instances.~ndlrn <package>: display DLRN status for this package.", [Nick]).
+    member("help", List).
 
 % dlrn ansible
-dlrn_answer(List, Nick, Answer) :-
+dlrn_answer(List, _, Answer) :-
     member("dlrn", List),
     dlrn_status(Name, Branch, Status),
     member(Name, List),
-    format(atom(Answer), "~w: ~w ~w ~w", [Nick, Name, Branch, Status]).
+    format(string(Answer), "~w ~w ~w", [Name, Branch, Status]).
 
 % dlrn
-dlrn_answer(List, Nick, Answer) :-
+dlrn_answer(List, _, Answer) :-
     member("dlrn", List),
     findall(Str, dlrn_answer(Str), Res),
-    string_join(', ', Res, Concat),
-    format(atom(Answer), "~w: ~w", [Nick, Concat]).
+    string_join(', ', Res, Answer).
 
 dlrn_answer(Answer) :-
     dlrn_status(Name, Branch, Status),
-    format(atom(Answer), "~w ~w ~w", [Name, Branch, Status]).
+    format(string(Answer), "~w ~w ~w", [Name, Branch, Status]).
 
 :- add_answerer(dlrn:dlrn_answer).
 

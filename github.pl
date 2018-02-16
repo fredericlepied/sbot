@@ -44,23 +44,19 @@ deduce_github_facts(Gen) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 github_solver(_) :-
-    get_longterm_fact(github_track_pr(Owner, Project, Pr, Requester)),
+    get_longterm_fact(github_track_pr(Owner, Project, Pr, Context)),
     get_fact(github_updated_pr(Owner, Project, Pr, Sha)),
     get_fact(github_pr_html(Owner, Project, Pr, Url)),
-    config(irc_channels, [Chan|_]),
-    format(atom(Text), "~w: Github PR ~w updated (~w)", [Requester, Url, Sha]),
-    %% todo(fl) need to remove hardcoded id
-    notify(irc, Text, Chan).
+    format(string(Text), "Github PR ~w updated (~w)", [Url, Sha]),
+    notify(Text, Context).
 
 github_solver(_) :-
-    get_longterm_fact(github_track_pr(Owner, Project, Pr, Requester)),
+    get_longterm_fact(github_track_pr(Owner, Project, Pr, Context)),
     get_fact(github_pr_merged(Owner, Project, Pr, yes)),
     get_old_fact(github_pr_merged(Owner, Project, Pr, no)),
     get_fact(github_pr_html(Owner, Project, Pr, Url)),
-    config(irc_channels, [Chan|_]),
-    format(atom(Text), "~w: Github PR ~w merged", [Requester, Url]),
-    %% todo(fl) need to remove hardcoded id
-    notify(irc, Text, Chan).
+    format(string(Text), "Github PR ~w merged", [Url]),
+    notify(Text, Context).
 
 :- add_fact_solver(github:github_solver).
 
@@ -69,23 +65,22 @@ github_solver(_) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % github help
-github_answer(List, Nick, Answer) :-
+github_answer(List, _, "~w: github trackpr <owner> <project> <pr>~ngithub trackpr: list all the tracked PR") :-
     member("github", List),
-    member("help", List),
-    format(atom(Answer), "~w: github trackpr <owner> <project> <pr>~ngithub trackpr: list all the tracked PR", [Nick]).
+    member("help", List).
 
 % github trackpr ansible ansible 35917
-github_answer(["github", "trackpr", Owner, Project, Pr], Nick, Answer) :-
-    update_longterm_fact(github_track_pr(Owner, Project, Pr, Nick)),
+github_answer(["github", "trackpr", Owner, Project, Pr], Context, Answer) :-
+    update_longterm_fact(github_track_pr(Owner, Project, Pr, Context)),
     last_gen(Gen), update_github_facts(Gen),
     get_fact(github_pr_html(Owner, Project, Pr, Url)),
-    format(atom(Answer), "~w: tracking PR ~w", [Nick, Url]).
+    format(string(Answer), "tracking PR ~w", [Url]).
 
 % github trackpr
-github_answer(["github", "trackpr"], Nick, Answer) :-
+github_answer(["github", "trackpr"], _, Answer) :-
     findall(Url, get_fact(github_pr_html(_, _, _, Url)), Urls),
     string_join(" ", Urls, TextUrls),
-    format(atom(Answer), "~w: tracking PR ~w", [Nick, TextUrls]).
+    format(string(Answer), "tracking PR ~w", [TextUrls]).
 
 :- add_answerer(github:github_answer).
 
