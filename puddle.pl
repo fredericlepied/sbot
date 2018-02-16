@@ -55,6 +55,13 @@ lookup_product(Product, [_|Rest], Puddle) :-
 %% Communication predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% puddle help
+puddle_answer(Text, Nick, Answer) :-
+    split_string(Text, " ", "", List),
+    member("puddle", List),
+    member("help", List),
+    format(atom(Answer), "~w: puddle: display the list of available puddles.~npuddle <puddle>: display the list of aliases for this puddle.~npuddle <puddle> <alias>: display the real puddle name for this alias and its URL.", [Nick]).
+
 % puddle OSP10
 puddle_answer(Text, Nick, Answer) :-
     split_string(Text, " ", "", ["puddle", ProdVer]),

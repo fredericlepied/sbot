@@ -50,8 +50,18 @@ answer(Text, Nick, Answer) :-
     format(atom(Answer), "~w ~w", [Elt, Nick]),
     !.
 
+answer(Text, Nick, Answer) :-
+    split_string(Text, " ", "", [Help]),
+    string_lower(Help, "help"),
+    config(modules, List),
+    delete(List, irc, Removed),
+    delete(Removed, autoupdate, Removed2),
+    string_join(", ", Removed2, Output),
+    format(atom(Answer), "~w: use <module> help. Available modules: ~w", [Nick, Output]),
+    !.
+
 answer(_, Nick, Answer) :-
-    format(atom(Answer), "~w: not understood", [Nick]).
+    format(atom(Answer), "~w: not understood. Use 'help' to list what I understand.", [Nick]).
 
 notify(Id, Text, To) :-
     priv_msg(Id, Text, To).

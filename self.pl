@@ -21,6 +21,12 @@ self_version(Version) :-
 
 self_answer(Text, Nick, Answer) :-
     split_string(Text, " ", "", List),
+    member("self", List),
+    member("help", List),
+    format(atom(Answer), "~w: version: display the version of my source code.", [Nick]).
+
+self_answer(Text, Nick, Answer) :-
+    split_string(Text, " ", "", List),
     member("version", List),
     self_version(Version),
     format(atom(Answer), "~w: version ~w", [Nick, Version]).

@@ -108,6 +108,14 @@ basename(Name, Base) :-
 %% communication predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% dlrn help
+dlrn_answer(Text, Nick, Answer) :-
+    split_string(Text, " ", "", List),
+    member("dlrn", List),
+    member("help", List),
+    format(atom(Answer), "~w: dlrn: display the status of all the DLRN instances.~ndlrn <package>: display DLRN status for this package.", [Nick]).
+
+% dlrn ansible
 dlrn_answer(Text, Nick, Answer) :-
     split_string(Text, " ", "", List),
     member("dlrn", List),
@@ -115,6 +123,7 @@ dlrn_answer(Text, Nick, Answer) :-
     member(Name, List),
     format(atom(Answer), "~w: ~w ~w ~w", [Nick, Name, Branch, Status]).
 
+% dlrn
 dlrn_answer(Text, Nick, Answer) :-
     split_string(Text, " ", "", List),
     member("dlrn", List),
