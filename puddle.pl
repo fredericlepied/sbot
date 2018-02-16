@@ -23,6 +23,40 @@ update_puddle_facts(Gen) :-
 :- add_fact_updater(puddle:update_puddle_facts).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% fact deducer
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+deduce_puddle_facts(Gen) :-
+    get_fact(puddle_info(ProdVer, Url, Type, New)),
+    get_old_fact(puddle_info(ProdVer, Url, Type, Old)),
+    New \== Old,
+    update_fact(Gen, new_puddle(ProdVer, Url, Type, New, Old)).
+
+deduce_puddle_facts(Gen) :-
+    Gen \== 1,
+    get_fact(puddle_info(ProdVer, Url, Type, New)),
+    not(get_old_fact(puddle_info(ProdVer, Url, Type, _))),
+    update_fact(Gen, new_puddle(ProdVer, Url, Type, New)).
+
+:- add_fact_deducer(puddle:deduce_puddle_facts).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% fact solver
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+puddle_solver(_) :-
+    get_fact(new_puddle(ProdVer, _, Type, New, Old)),
+    format(string(Text), "** new puddle ~w for ~w ~w (old was ~w)", [New, ProdVer, Type, Old]),
+    notify(Text, []).
+
+puddle_solver(_) :-
+    get_fact(new_puddle(ProdVer, _, Type, New)),
+    format(string(Text), "** new puddle ~w for ~w ~w (first one)", [New, ProdVer, Type]),
+    notify(Text, []).
+
+:- add_fact_solver(puddle:puddle_solver).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% status predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

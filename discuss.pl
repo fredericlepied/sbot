@@ -85,6 +85,14 @@ add_prefix([_, Nick, _], Text, PrefixedText) :-
 
 add_prefix(_, Text, Text).
 
+notify(Text, []) :-
+    config(irc_channels, [Chan|_]),
+    % todo(fl) figure a way to infer a default id
+    Context = [irc, Chan],
+    add_prefix(Context, Text, PrefixedText),
+    send_message(PrefixedText, Context),
+    !.
+
 notify(Text, Context) :-
     add_prefix(Context, Text, PrefixedText),
     send_message(PrefixedText, Context).

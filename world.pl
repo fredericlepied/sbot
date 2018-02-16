@@ -89,6 +89,8 @@ solve_facts(_) :-
 get_facts(Gen) :-
     format('Updating facts for gen ~w~n', [Gen]),
     update_facts(Gen),
+    retractall(last_gen(_)),
+    asserta(last_gen(Gen)),
     format('Deducing facts for gen ~w~n', [Gen]),
     deduce_facts(Gen),
     format('Solving facts for gen ~w~n', [Gen]),
@@ -110,8 +112,6 @@ forever :-
 	Err,
 	print_message(error, Err)
     ),
-    retractall(last_gen(_)),
-    asserta(last_gen(Gen)),
     % Keep only the previous generation of facts
     Prev is Gen - 2,
     retractall(fact(Prev,_)),

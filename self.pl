@@ -23,7 +23,7 @@ self_answer(List, _, "version: display the version of my source code.") :-
     member("self", List),
     member("help", List).
 
-self_answer(List, Nick, Answer) :-
+self_answer(List, _, Answer) :-
     member("version", List),
     self_version(Version),
     format(string(Answer), "version ~w", [Version]).

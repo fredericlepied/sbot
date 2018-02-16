@@ -9,6 +9,8 @@
 config(irc_server, 'irc.freenode.org').
 config(irc_port, 6667).
 config(irc_nick, "sbot").
+
+% the first chan will get the notifications
 config(irc_channels, ["##testbot"]).
 
 %% add the optional modules you want to activate to the list
