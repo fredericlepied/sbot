@@ -65,7 +65,7 @@ github_solver(_) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % github help
-github_answer(List, _, "~w: github trackpr <owner> <project> <pr>~ngithub trackpr: list all the tracked PR") :-
+github_answer(List, _, "github trackpr <owner> <project> <pr>\ngithub trackpr: list all the tracked PR") :-
     member("github", List),
     member("help", List).
 

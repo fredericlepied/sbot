@@ -109,7 +109,7 @@ basename(Name, Base) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % dlrn help
-dlrn_answer(List, _, "~w: dlrn: display the status of all the DLRN instances.~ndlrn <package>: display DLRN status for this package.") :-
+dlrn_answer(List, _, "dlrn: display the status of all the DLRN instances.\ndlrn <package>: display DLRN status for this package.") :-
     member("dlrn", List),
     member("help", List).
 

@@ -56,7 +56,7 @@ lookup_product(Product, [_|Rest], Puddle) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % puddle help
-puddle_answer(List, _, "puddle: display the list of available puddles.~npuddle <puddle>: display the list of aliases for this puddle.~npuddle <puddle> <alias>: display the real puddle name for this alias and its URL.") :-
+puddle_answer(List, _, "puddle: display the list of available puddles.\npuddle <puddle>: display the list of aliases for this puddle.\npuddle <puddle> <alias>: display the real puddle name for this alias and its URL.") :-
     member("puddle", List),
     member("help", List).
 

@@ -57,7 +57,7 @@ answer(List, [_,Nick|_], Answer) :-
     member(Elt, List),
     string_upper(Elt, UpperElt),
     member(UpperElt, ["HI", "HELLO", "SALUT", "BONJOUR", "HOLA", "HEY"]),
-    format(atom(Answer), "~w ~w", [Elt, Nick]),
+    format(string(Answer), "~w ~w", [Elt, Nick]),
     !.
 
 answer([Elt|_], Context, Answer) :-
@@ -72,7 +72,7 @@ answer([Help], Context, Answer) :-
     delete(List, irc, Removed),
     delete(Removed, autoupdate, Removed2),
     string_join(", ", Removed2, Output),
-    format(atom(Text), "use <module> help. Available modules: ~w", [Output]),
+    format(string(Text), "use <module> help. Available modules: ~w", [Output]),
     add_prefix(Context, Text, Answer),
     !.
 
