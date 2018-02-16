@@ -10,7 +10,7 @@
 :- dynamic answerer/1.
 
 process_message(Id, Server, "PRIVMSG", Params, Text) :-
-    split_string(Text, " ", "@:.,", S),
+    split_string(Text, " ", "@:.,!", S),
     delete(S, "", CleanList),
     config(irc_nick, IrcNick),
     member(IrcNick, Params),
@@ -18,7 +18,7 @@ process_message(Id, Server, "PRIVMSG", Params, Text) :-
     private_message(Id, CleanList, Nick).
 
 process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
-    split_string(Text, " ", "@:.,", S),
+    split_string(Text, " ", "@:.,!", S),
     config(irc_nick, IrcNick),
     member(IrcNick, S),
     delete(S, IrcNick, CleanList1),
@@ -49,6 +49,12 @@ answer(List, Nick, Answer) :-
     string_upper(Elt, UpperElt),
     member(UpperElt, ["HI", "HELLO"]),
     format(atom(Answer), "~w ~w", [Elt, Nick]),
+    !.
+
+answer([Elt|_], Nick, Answer) :-
+    string_upper(Elt, UpperElt),
+    member(UpperElt, ["THX", "THANKS", "THANK"]),
+    format(atom(Answer), "~w: you're welcome", [Nick]),
     !.
 
 answer([Help], Nick, Answer) :-
