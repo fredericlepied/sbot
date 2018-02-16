@@ -3,7 +3,7 @@
 :- module(world, [get_facts/0, update_fact/2, add_fact_updater/1,
                   add_fact_deducer/1, add_fact_solver/1, fact_loop/0,
                   get_fact/1, get_old_fact/1, update_longterm_fact/1,
-                  get_longterm_fact/1, last_gen/1
+                  get_longterm_fact/1, last_gen/1, remove_longterm_fact/1
                  ]).
 
 :- dynamic fact/2, fact_updater/1, fact_deducer/1, fact_solver/1, last_gen/1.
@@ -21,10 +21,21 @@ get_longterm_fact(Fact) :-
     fact(-1, Fact).
 
 update_fact(Gen, Fact) :-
+    fact(Gen, Fact),
+    !.
+
+update_fact(Gen, Fact) :-
     asserta(fact(Gen, Fact)).
 
 update_longterm_fact(Fact) :-
+    fact(-1, Fact),
+    !.
+
+update_longterm_fact(Fact) :-
     asserta(fact(-1, Fact)).
+
+remove_longterm_fact(Fact) :-
+    retractall(fact(-1, Fact)).
 
 add_fact_updater(Updater) :-
     fact_updater(Updater),

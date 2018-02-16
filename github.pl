@@ -65,7 +65,7 @@ github_solver(_) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % github help
-github_answer(List, _, "github trackpr <owner> <project> <pr>\ngithub trackpr: list all the tracked PR") :-
+github_answer(List, _, "github trackpr <owner> <project> <pr>\ngithub untrackpr <owner> <project> <pr>\ngithub trackpr: list all the tracked PR") :-
     member("github", List),
     member("help", List).
 
@@ -75,6 +75,12 @@ github_answer(["github", "trackpr", Owner, Project, Pr], Context, Answer) :-
     last_gen(Gen), update_github_facts(Gen),
     get_fact(github_pr_html(Owner, Project, Pr, Url)),
     format(string(Answer), "tracking PR ~w", [Url]).
+
+% github untrackpr ansible ansible 35917
+github_answer(["github", "untrackpr", Owner, Project, Pr], Context, Answer) :-
+    remove_longterm_fact(github_track_pr(Owner, Project, Pr, Context)),
+    get_fact(github_pr_html(Owner, Project, Pr, Url)),
+    format(string(Answer), "not tracking PR ~w anymore", [Url]).
 
 % github trackpr
 github_answer(["github", "trackpr"], _, Answer) :-
