@@ -1,7 +1,7 @@
 %% -*- prolog -*-
 
 :- module(utils,
-          [cmd/2, cmd/3, string_join/3
+          [cmd/2, cmd/3, cmd/4, string_join/3
           ]).
 
 
@@ -12,14 +12,17 @@ cmd(Fmt, Args) :-
     shell(Cmd, 0).
 
 cmd(Fmt, Args, OutputLines) :-
+    cmd(Fmt, Args, OutputLines, 0).
+
+cmd(Fmt, Args, OutputLines, Status) :-
     format(atom(Cmd), Fmt, Args),
     string_concat("+ ", Cmd, StrCmd),
     writeln(StrCmd),
-    setup_call_cleanup(
-        process_create(path(bash), ["-c", Cmd],
-                       [stdout(pipe(Out))]),
-        read_lines(Out, OutputLines),
-        close(Out)).
+    process_create(path(bash), ["-c", Cmd],
+                   [stdout(pipe(Out)),stderr(pipe(Out)),process(Pid)]),
+    read_lines(Out, OutputLines),
+    close(Out),
+    process_wait(Pid, exit(Status)).
 
 read_lines(Out, Lines) :-
         read_line_to_codes(Out, Line1),
