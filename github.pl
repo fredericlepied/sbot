@@ -1,7 +1,7 @@
 %% -*- prolog -*-
 
 :- module(github,
-          [
+          [github_answer/3
           ]).
 
 :- use_module(config).

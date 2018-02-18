@@ -13,7 +13,7 @@ test(answer_thx) :-
 
 test(answer_thx) :-
     discuss:answer(["help"], [irc, "nick"], Answer),
-    assertion(Answer == "use <module> help. Available modules: dlrn, self, github, puddle").
+    assertion(Answer == "use <module> help. Available modules: dlrn, self, github, puddle, fun").
 
 test(answer_default) :-
     discuss:answer([], [irc, "nick"], Answer),
@@ -21,11 +21,11 @@ test(answer_default) :-
 
 test(answer_dlrn_help) :-
     discuss:answer(["dlrn", "help"], [irc, "nick"], Answer),
-    assertion(Answer == "dlrn: display the status of all the DLRN instances.\ndlrn <package>: display DLRN status for this package.").
+    assertion(Answer == "dlrn: display the status of all the DLRN instances.\ndlrn <package>: display DLRN status for this package.\ndlrn apply pr <pr> to <package> <branch>.").
 
 test(answer_github_help) :-
     discuss:answer(["github", "help"], [irc, "nick"], Answer),
-    assertion(Answer == "github trackpr <owner> <project> <pr>\ngithub trackpr: list all the tracked PR").
+    assertion(Answer == "github trackpr <owner> <project> <pr>\ngithub untrackpr <owner> <project> <pr>\ngithub trackpr: list all the tracked PR").
 
 test(answer_puddle_help) :-
     discuss:answer(["puddle", "help"], [irc, "nick"], Answer),
@@ -34,6 +34,10 @@ test(answer_puddle_help) :-
 test(answer_self_help) :-
     discuss:answer(["self", "help"], [irc, "nick"], Answer),
     assertion(Answer == "version: display the version of my source code.").
+
+test(answer_fun_help) :-
+    discuss:answer(["fun", "help"], [irc, "nick"], Answer),
+    assertion(Answer == "fortune <word>: furtune message").
 
 :- end_tests(answers).
 

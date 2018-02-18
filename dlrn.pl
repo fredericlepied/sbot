@@ -14,6 +14,7 @@
 :- use_module(world).
 :- use_module(discuss).
 :- use_module(utils).
+:- use_module(github).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% fact updater
@@ -30,9 +31,52 @@ update_dlrn_facts(Gen) :-
 %% fact deducer
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% detect failure
 deduce_dlrn_facts(Gen) :-
     dlrn_status(Name, Branch, failure),
     update_fact(Gen, dlrn_problem(Name, Branch)).
+
+% remove PR in package if requested and not already done
+deduce_dlrn_facts(_) :-
+    get_fact(github_pr_merged(Name, Name, Pr, yes)),
+    get_longterm_fact(dlrn_apply_pr(Pr, Name, Branch, Context)),
+    get_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path)),
+    remove_patch(Name, Branch, Pr),
+    format(string(Text), "removed PR ~w from package ~w ~w (as it was merged)",
+           [Pr, Name, Branch]),
+    notify(Text, Context),
+    remove_longterm_fact(dlrn_apply_pr(Pr, Name, Branch, Context)),
+    remove_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path)).
+
+% update PR in package if requested and not already done
+deduce_dlrn_facts(_) :-
+    get_longterm_fact(dlrn_apply_pr(Pr, Name, Branch, Context)),
+    get_fact(dlrn_info(Name, Branch, [[_, [_, Path,_]]|_])),
+    deduce_dlrn_local_build(Pr, Name, Branch, Context, Path),
+    deduce_dlrn_build(Pr, Name, Branch, Context, Path).
+
+deduce_dlrn_local_build(Pr, Name, Branch, Context, Path) :-
+    get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Path)),
+    !.
+
+deduce_dlrn_local_build(Pr, Name, Branch, Context, Path) :-
+    not(get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Path))),
+    build_pr(Name, Branch, Path, Pr),
+    update_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Path)),
+    format(string(Text), "built package ~w ~w locally with updated PR ~w (~w)",
+           [Name, Branch, Pr, Path]),
+    notify(Text, Context).
+
+deduce_dlrn_build(Pr, Name, Branch, Context, Path) :-
+    get_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path)),
+    !.
+
+deduce_dlrn_build(Pr, Name, Branch, Context, Path) :-
+    not(get_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path))),
+    publish_patch(Name, Branch, Pr),
+    update_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path)),
+    format(string(Text), "updated dlrn package ~w ~w with PR ~w", [Name, Branch, Pr]),
+    notify(Text, Context).
 
 :- add_fact_deducer(dlrn:deduce_dlrn_facts).
 
@@ -40,14 +84,18 @@ deduce_dlrn_facts(Gen) :-
 %% fact solver
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% already reproduced build issue
 dlrn_solver(_) :-
     get_fact(dlrn_problem(Name, Branch)),
     get_fact(dlrn_reproduced(Name, Branch)).
 
+% reproduced build issue
 dlrn_solver(Gen) :-
     get_fact(dlrn_problem(Name, Branch)),
     not(download_build_last_dlrn_src(Name, Branch)),
-    update_fact(Gen, dlrn_reproduced(Name, Branch)).
+    update_fact(Gen, dlrn_reproduced(Name, Branch)),
+    format(string(Text), "** DLRN ansible build problem reproduced for ~w ~w", [Name, Branch]),
+    notify(Text, []).
 
 :- add_fact_solver(dlrn:dlrn_solver).
 
@@ -109,9 +157,15 @@ basename(Name, Base) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % dlrn help
-dlrn_answer(List, _, "dlrn: display the status of all the DLRN instances.\ndlrn <package>: display DLRN status for this package.") :-
+dlrn_answer(List, _, "dlrn: display the status of all the DLRN instances.\ndlrn <package>: display DLRN status for this package.\ndlrn apply pr <pr> to <package> <branch>.") :-
     member("dlrn", List),
     member("help", List).
+
+% dlrn apply pr 35917 to ansible devel
+dlrn_answer(["dlrn", "apply", "pr", Pr, "to", Name, Branch], Context, Answer) :-
+    update_longterm_fact(dlrn_apply_pr(Pr, Name, Branch, Context)),
+    github_answer(["github", "trackpr", Name, Name, Pr], Context, _),
+    format(string(Answer), "ok added PR ~w to ~w ~w to my backlog.", [Pr, Name, Branch]).
 
 % dlrn ansible
 dlrn_answer(List, _, Answer) :-
