@@ -17,10 +17,10 @@
 update_github_facts(Gen) :-
     get_longterm_fact(github_track_pr(Owner, Project, Pr, _)),
     github_pr(Owner, Project, Pr, Dict),
-    update_fact(Gen, github_pr_sha(Owner, Project, Pr, Dict.head.sha)),
-    update_fact(Gen, github_pr_html(Owner, Project, Pr, Dict.'_links'.html.href)),
+    store_fact(Gen, github_pr_sha(Owner, Project, Pr, Dict.head.sha)),
+    store_fact(Gen, github_pr_html(Owner, Project, Pr, Dict.'_links'.html.href)),
     merge_status(Dict.merged, Status),
-    update_fact(Gen, github_pr_merged(Owner, Project, Pr, Status)).
+    store_fact(Gen, github_pr_merged(Owner, Project, Pr, Status)).
 
 merge_status(false, no).
 merge_status(true, yes).
@@ -35,7 +35,7 @@ deduce_github_facts(Gen) :-
     get_fact(github_pr_sha(Owner, Project, Pr, Sha)),
     get_old_fact(github_pr_sha(Owner, Project, Pr, OldSha)),
     Sha \== OldSha,
-    update_fact(Gen, github_updated_pr(Owner, Project, Pr, OldSha)).
+    store_fact(Gen, github_updated_pr(Owner, Project, Pr, OldSha)).
 
 :- add_fact_deducer(github:deduce_github_facts).
 
@@ -71,7 +71,7 @@ github_answer(List, _, "github trackpr <owner> <project> <pr>\ngithub untrackpr 
 
 % github trackpr ansible ansible 35917
 github_answer(["github", "trackpr", Owner, Project, Pr], Context, Answer) :-
-    update_longterm_fact(github_track_pr(Owner, Project, Pr, Context)),
+    store_longterm_fact(github_track_pr(Owner, Project, Pr, Context)),
     last_gen(Gen), update_github_facts(Gen),
     get_fact(github_pr_html(Owner, Project, Pr, Url)),
     format(string(Answer), "tracking PR ~w", [Url]).

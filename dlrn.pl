@@ -23,7 +23,7 @@
 update_dlrn_facts(Gen) :-
     dlrn_status_url(Name, Branch, _),
     get_dlrn_fact(Name, Branch, Info),
-    update_fact(Gen, dlrn_info(Name, Branch, Info)).
+    store_fact(Gen, dlrn_info(Name, Branch, Info)).
 
 :- add_fact_updater(dlrn:update_dlrn_facts).
 
@@ -34,7 +34,7 @@ update_dlrn_facts(Gen) :-
 % detect failure
 deduce_dlrn_facts(Gen) :-
     dlrn_status(Name, Branch, failure),
-    update_fact(Gen, dlrn_problem(Name, Branch)).
+    store_fact(Gen, dlrn_problem(Name, Branch)).
 
 % remove PR in package if requested and not already done
 deduce_dlrn_facts(_) :-
@@ -62,7 +62,7 @@ deduce_dlrn_local_build(Pr, Name, Branch, Context, Path) :-
 deduce_dlrn_local_build(Pr, Name, Branch, Context, Path) :-
     not(get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Path))),
     build_pr(Name, Branch, Path, Pr),
-    update_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Path)),
+    store_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Path)),
     format(string(Text), "built package ~w ~w locally with updated PR ~w (~w)",
            [Name, Branch, Pr, Path]),
     notify(Text, Context).
@@ -74,7 +74,7 @@ deduce_dlrn_build(Pr, Name, Branch, Context, Path) :-
 deduce_dlrn_build(Pr, Name, Branch, Context, Path) :-
     not(get_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path))),
     publish_patch(Name, Branch, Pr),
-    update_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path)),
+    store_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path)),
     format(string(Text), "updated dlrn package ~w ~w with PR ~w", [Name, Branch, Pr]),
     notify(Text, Context).
 
@@ -93,7 +93,7 @@ dlrn_solver(_) :-
 dlrn_solver(Gen) :-
     get_fact(dlrn_problem(Name, Branch)),
     not(download_build_last_dlrn_src(Name, Branch)),
-    update_fact(Gen, dlrn_reproduced(Name, Branch)),
+    store_fact(Gen, dlrn_reproduced(Name, Branch)),
     format(string(Text), "** DLRN ansible build problem reproduced for ~w ~w", [Name, Branch]),
     notify(Text, []).
 
@@ -163,7 +163,7 @@ dlrn_answer(List, _, "dlrn: display the status of all the DLRN instances.\ndlrn 
 
 % dlrn apply pr 35917 to ansible devel
 dlrn_answer(["dlrn", "apply", "pr", Pr, "to", Name, Branch], Context, Answer) :-
-    update_longterm_fact(dlrn_apply_pr(Pr, Name, Branch, Context)),
+    store_longterm_fact(dlrn_apply_pr(Pr, Name, Branch, Context)),
     github_answer(["github", "trackpr", Name, Name, Pr], Context, _),
     format(string(Answer), "ok added PR ~w to ~w ~w to my backlog.", [Pr, Name, Branch]).
 

@@ -18,7 +18,7 @@ update_puddle_facts(Gen) :-
     config(puddle, [Product, Version, Url]),
     get_puddle_fact(Version, Url, Type, Puddle),
     string_concat(Product, Version, ProdVer),
-    update_fact(Gen, puddle_info(ProdVer, Url, Type, Puddle)).
+    store_fact(Gen, puddle_info(ProdVer, Url, Type, Puddle)).
 
 :- add_fact_updater(puddle:update_puddle_facts).
 
@@ -30,13 +30,13 @@ deduce_puddle_facts(Gen) :-
     get_fact(puddle_info(ProdVer, Url, Type, New)),
     get_old_fact(puddle_info(ProdVer, Url, Type, Old)),
     New \== Old,
-    update_fact(Gen, new_puddle(ProdVer, Url, Type, New, Old)).
+    store_fact(Gen, new_puddle(ProdVer, Url, Type, New, Old)).
 
 deduce_puddle_facts(Gen) :-
     Gen \== 1,
     get_fact(puddle_info(ProdVer, Url, Type, New)),
     not(get_old_fact(puddle_info(ProdVer, Url, Type, _))),
-    update_fact(Gen, new_puddle(ProdVer, Url, Type, New)).
+    store_fact(Gen, new_puddle(ProdVer, Url, Type, New)).
 
 :- add_fact_deducer(puddle:deduce_puddle_facts).
 
