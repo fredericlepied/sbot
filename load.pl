@@ -1,6 +1,5 @@
 %% -*- prolog -*-
 
-:- use_module(kb).
 :- use_module(world).
 :- use_module(config).
 

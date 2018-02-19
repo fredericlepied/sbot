@@ -10,18 +10,18 @@
 :- use_module(library(http/http_open)).
 :- use_module(library(xpath)).
 
-:- use_module(kb).
-:- use_module(world).
+:- use_module(config).
 :- use_module(discuss).
-:- use_module(utils).
 :- use_module(github).
+:- use_module(utils).
+:- use_module(world).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% fact updater
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 update_dlrn_facts(Gen) :-
-    dlrn_status_url(Name, Branch, _),
+    config(dlrn_status_url, [Name, Branch, _]),
     get_dlrn_fact(Name, Branch, Info),
     store_fact(Gen, dlrn_info(Name, Branch, Info)).
 
@@ -112,7 +112,7 @@ get_dlrn_fact(Name, Branch, Info) :-
     extract_dlrn_table_data(Rows, Info).
 
 get_dlrn_dom(Name, Branch, DOM) :-
-    dlrn_status_url(Name, Branch, BaseUrl),
+    config(dlrn_status_url, [Name, Branch, BaseUrl]),
     string_concat(BaseUrl, "report.html", Url),
     http_open(Url, In, []),
     call_cleanup(
@@ -191,12 +191,12 @@ dlrn_answer(Answer) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 git(Name, GitUrl) :-
-    gitrepo(Name, GitUrl),
+    config(gitrepo, [Name, GitUrl]),
     !.
 
-git(Name, GitUrl) :-
-    github(Name, Url),
-    string_concat(Url, ".git", GitUrl).
+git(Project, GitUrl) :-
+    config(github, [Owner, Project]),
+    format(string(GitUrl), "https://github.com/~w/~w", [Owner, Project]).
 
 workspace(W) :-
     getenv("HOME", Home),
@@ -236,13 +236,13 @@ download_build_last_dlrn_src(Name, Branch) :-
     download_build_dlrn_src(Name, Branch, Path).
 
 download_build_dlrn_src(Name, Branch, Path) :-
-    dlrn_status_url(Name, Branch, Url),
+    config(dlrn_status_url, [Name, Branch, Url]),
     workspace(Ws),
     cmd("dlrn_download_srcrpm.sh ~w ~w ~w", [Ws, Url, Path]),
     cmd("dlrn_build_srcrpm.sh ~w ~w", [Ws, Path]).
 
 build_pr(Name, Branch, Path, Pr) :-
-    dlrn_status_url(Name, Branch, Url),
+    config(dlrn_status_url, [Name, Branch, Url]),
     workspace(Ws),
     cmd("dlrn_download_srcrpm.sh ~w ~w ~w", [Ws, Url, Path]),
     git_extract_pr(Name, Pr),

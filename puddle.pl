@@ -4,7 +4,6 @@
 
 :- use_module(library(http/http_client)).
 
-:- use_module(kb).
 :- use_module(world).
 :- use_module(discuss).
 :- use_module(config).
