@@ -68,7 +68,11 @@ add_fact_solver(Solver) :-
 
 update_facts(Gen) :-
     fact_updater(Updater),
-    call(Updater, Gen),
+    catch(
+        call(Updater, Gen),
+	Err,
+	print_message(error, Err)
+    ),
     fail.
 
 update_facts(_) :-
@@ -76,7 +80,11 @@ update_facts(_) :-
 
 deduce_facts(Gen) :-
     fact_deducer(Deducer),
-    call(Deducer, Gen),
+    catch(
+        call(Deducer, Gen),
+	Err,
+	print_message(error, Err)
+    ),
     fail.
 
 deduce_facts(_) :-
@@ -84,7 +92,11 @@ deduce_facts(_) :-
 
 solve_facts(Gen) :-
     fact_solver(Solver),
-    call(Solver, Gen),
+    catch(
+        call(Solver, Gen),
+	Err,
+	print_message(error, Err)
+    ),
     fail.
 
 solve_facts(_) :-
