@@ -2,12 +2,11 @@
 
 set -eu
 
-WSP=$1
-DIR=$2
+DIR=$1
 
 set -x
 
-cd $WSP/$DIR
+cd $DIR
 
 mock -r $(ls ../*.cfg *.cfg) --rebuild *.src.rpm
 

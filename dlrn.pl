@@ -2,8 +2,7 @@
 
 :- module(dlrn,
           [git/2, workspace/1, git_workspace/2, git_extract_pr/2,
-           get_dlrn_fact/3, dlrn_last_bad/3, dlrn_status/3,
-           download_build_last_dlrn_src/2, download_build_dlrn_src/3,
+           get_dlrn_fact/3, dlrn_last_bad/3, dlrn_status/4,
            build_pr/4, distgit_workspace/2, publish_patch/3
           ]).
 
@@ -33,8 +32,8 @@ update_dlrn_facts(Gen) :-
 
 % detect failure
 deduce_dlrn_facts(Gen) :-
-    dlrn_status(Name, Branch, failure),
-    store_fact(Gen, dlrn_problem(Name, Branch)).
+    dlrn_status(Name, Branch, failure, Path),
+    store_fact(Gen, dlrn_problem(Name, Branch, Path)).
 
 % remove PR in package if requested and PR has been merged
 deduce_dlrn_facts(_) :-
@@ -54,8 +53,9 @@ deduce_dlrn_facts(_) :-
     get_sha(Name, Branch, Pr, Sha),
     get_fact(dlrn_info(Name, Branch, [[_, [_, Path,_]]|_])),
     deduce_dlrn_local_build(Pr, Name, Branch, Context, Path, Sha),
-    deduce_dlrn_build(Pr, Name, Branch, Context, Sha).
+    deduce_dlrn_publish(Pr, Name, Branch, Context, Sha).
 
+% not built sha
 get_sha(Name, _, Pr, Sha) :-
     get_fact(github_updated_pr(_, Name, Pr, Sha, _)).
 
@@ -63,29 +63,32 @@ get_sha(Name, Branch, Pr, Sha) :-
     get_fact(github_pr_sha(_, Name, Pr, Sha)),
     not(get_longterm_fact(dlrn_local_build(Pr, Name, Branch, _, Sha))).
 
+% build src.rpm locally with a PR
 deduce_dlrn_local_build(Pr, Name, Branch, Context, _, Sha) :-
-    get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Sha)),
+    get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Sha, _)),
     !.
 
 deduce_dlrn_local_build(Pr, Name, Branch, Context, Path, Sha) :-
-    not(get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Sha))),
-    build_pr(Name, Branch, Path, Pr),
-    store_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Sha)),
-    format(string(Text), "built package ~w ~w locally with updated PR ~w (~w)",
-           [Name, Branch, Pr, Sha]),
+    not(get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Sha, _))),
+    (build_pr(Name, Branch, Path, Pr) -> Status = success; Status = failure),
+    store_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Sha, Status)),
+    format(string(Text), "built package ~w ~w locally with updated PR ~w (~w): ~w",
+           [Name, Branch, Pr, Sha, Status]),
     notify(Text, Context).
 
-deduce_dlrn_build(Pr, Name, Branch, Context, Sha) :-
+% dlrn publish patch for PR
+deduce_dlrn_publish(Pr, Name, Branch, Context, Sha) :-
     get_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Sha)),
     !.
 
-deduce_dlrn_build(Pr, Name, Branch, Context, Sha) :-
+deduce_dlrn_publish(Pr, Name, Branch, Context, Sha) :-
     not(get_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Sha))),
     publish_patch(Name, Branch, Pr),
     store_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Sha)),
     format(string(Text), "updated dlrn package ~w ~w with PR ~w (~w)", [Name, Branch, Pr, Sha]),
     notify(Text, Context).
 
+% dlrn style path from sha1
 dlrn_path(Sha, Path) :-
     sub_string(Sha, 0, 2, _, First),
     sub_string(Sha, 2, 2, _, Second),
@@ -98,15 +101,18 @@ dlrn_path(Sha, Path) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % already reproduced build issue
-dlrn_solver(_) :-
-    get_fact(dlrn_problem(Name, Branch)),
-    get_fact(dlrn_reproduced(Name, Branch)).
+dlrn_solver(Gen) :-
+    get_fact(dlrn_problem(Name, Branch, Path)),
+    get_old_fact(dlrn_reproduced(Name, Branch, Path)),
+    store_fact(Gen, dlrn_reproduced(Name, Branch, Path)).
 
 % reproduced build issue
 dlrn_solver(Gen) :-
-    get_fact(dlrn_problem(Name, Branch)),
-    not(download_build_last_dlrn_src(Name, Branch)),
-    store_fact(Gen, dlrn_reproduced(Name, Branch)),
+    get_fact(dlrn_problem(Name, Branch, RelPath)),
+    config(dlrn_status_url, [Name, Branch, Url]),
+    download_srcrpm(Url, RelPath, Path),
+    not(build_srcrpm(Path)),
+    store_fact(Gen, dlrn_reproduced(Name, Branch, RelPath)),
     format(string(Text), "** DLRN ansible build problem reproduced for ~w ~w", [Name, Branch]),
     notify(Text, []).
 
@@ -116,8 +122,8 @@ dlrn_solver(Gen) :-
 %% status predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-dlrn_status(Name, Branch, Status) :-
-    get_fact(dlrn_info(Name, Branch, [[Status,_]|_])).
+dlrn_status(Name, Branch, Status, Path) :-
+    get_fact(dlrn_info(Name, Branch, [[Status,[_,Path,_]]|_])).
 
 get_dlrn_fact(Name, Branch, Info) :-
     get_dlrn_dom(Name, Branch, Dom),
@@ -183,7 +189,7 @@ dlrn_answer(["dlrn", "apply", "pr", Pr, "to", Name, Branch], Context, Answer) :-
 % dlrn ansible
 dlrn_answer(List, _, Answer) :-
     member("dlrn", List),
-    dlrn_status(Name, Branch, Status),
+    dlrn_status(Name, Branch, Status, _),
     member(Name, List),
     format(string(Answer), "~w ~w ~w", [Name, Branch, Status]).
 
@@ -194,7 +200,7 @@ dlrn_answer(List, _, Answer) :-
     string_join(', ', Res, Answer).
 
 dlrn_answer(Answer) :-
-    dlrn_status(Name, Branch, Status),
+    dlrn_status(Name, Branch, Status, _),
     format(string(Answer), "~w ~w ~w", [Name, Branch, Status]).
 
 :- add_answerer(dlrn:dlrn_answer).
@@ -244,23 +250,24 @@ mkdir(D) :-
 mkdir(D) :-
     make_directory(D).
 
-download_build_last_dlrn_src(Name, Branch) :-
-    get_fact(dlrn_info(Name, Branch, [[_,[_,Path,_]]|_])),
-    download_build_dlrn_src(Name, Branch, Path).
+get_last_path(Name, Branch, Path) :-
+    get_fact(dlrn_info(Name, Branch, [[_,[_,Path,_]]|_])).
 
-download_build_dlrn_src(Name, Branch, Path) :-
-    config(dlrn_status_url, [Name, Branch, Url]),
+download_srcrpm(Url, RelPath, Path) :-
     workspace(Ws),
-    cmd("dlrn_download_srcrpm.sh ~w ~w ~w", [Ws, Url, Path]),
-    cmd("dlrn_build_srcrpm.sh ~w ~w", [Ws, Path]).
+    cmd("dlrn_download_srcrpm.sh ~w ~w ~w", [Ws, Url, RelPath]),
+    format(string(Path), "~w/~w", [Ws, RelPath]).
 
-build_pr(Name, Branch, Path, Pr) :-
+build_srcrpm(Path) :-
+    cmd("dlrn_build_srcrpm.sh ~w", [Path]).
+
+build_pr(Name, Branch, RelPath, Pr) :-
     config(dlrn_status_url, [Name, Branch, Url]),
-    workspace(Ws),
-    cmd("dlrn_download_srcrpm.sh ~w ~w ~w", [Ws, Url, Path]),
+    download_srcrpm(Url, RelPath, Path),
     git_extract_pr(Name, Pr),
-    cmd("dlrn_inject_patch.sh ~w ~w ~w/~w/pr-~w.patch", [Ws, Path, Ws, Name, Pr]),
-    cmd("dlrn_build_srcrpm.sh ~w ~w/SRPMS", [Ws, Path]).
+    workspace(Ws),
+    cmd("dlrn_inject_patch.sh ~w ~w/~w/pr-~w.patch", [Path, Ws, Name, Pr]),
+    build_srcrpm(Path).
 
 publish_patch(Name, Branch, Pr) :-
     workspace(Ws),

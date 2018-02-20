@@ -2,14 +2,13 @@
 
 set -eu
 
-WSP=$1
-DIR=$2
-PATCH=$3
+DIR=$1
+PATCH=$2
 
 set -x
 
-mkdir -p $WSP/$DIR
-cd $WSP/$DIR
+mkdir -p $$DIR
+cd $DIR
 
 rpm --define "_topdir $PWD" -i *.src.rpm
 cp $PATCH SOURCES/
