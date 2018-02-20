@@ -35,7 +35,7 @@ deduce_github_facts(Gen) :-
     get_fact(github_pr_sha(Owner, Project, Pr, Sha)),
     get_old_fact(github_pr_sha(Owner, Project, Pr, OldSha)),
     Sha \== OldSha,
-    store_fact(Gen, github_updated_pr(Owner, Project, Pr, OldSha)).
+    store_fact(Gen, github_updated_pr(Owner, Project, Pr, Sha, OldSha)).
 
 :- add_fact_deducer(github:deduce_github_facts).
 
@@ -45,7 +45,7 @@ deduce_github_facts(Gen) :-
 
 github_solver(_) :-
     get_longterm_fact(github_track_pr(Owner, Project, Pr, Context)),
-    get_fact(github_updated_pr(Owner, Project, Pr, Sha)),
+    get_fact(github_updated_pr(Owner, Project, Pr, Sha, _)),
     get_fact(github_pr_html(Owner, Project, Pr, Url)),
     format(string(Text), "Github PR ~w updated (~w)", [Url, Sha]),
     notify(Text, Context).

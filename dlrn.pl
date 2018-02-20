@@ -36,7 +36,7 @@ deduce_dlrn_facts(Gen) :-
     dlrn_status(Name, Branch, failure),
     store_fact(Gen, dlrn_problem(Name, Branch)).
 
-% remove PR in package if requested and not already done
+% remove PR in package if requested and PR has been merged
 deduce_dlrn_facts(_) :-
     get_fact(github_pr_merged(Name, Name, Pr, yes)),
     get_longterm_fact(dlrn_apply_pr(Pr, Name, Branch, Context)),
@@ -48,35 +48,48 @@ deduce_dlrn_facts(_) :-
     remove_longterm_fact(dlrn_apply_pr(Pr, Name, Branch, Context)),
     remove_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path)).
 
-% update PR in package if requested and not already done
+% update PR in package if requested and PR is updated or not already built
 deduce_dlrn_facts(_) :-
     get_longterm_fact(dlrn_apply_pr(Pr, Name, Branch, Context)),
+    get_sha(Name, Branch, Pr, Sha),
     get_fact(dlrn_info(Name, Branch, [[_, [_, Path,_]]|_])),
-    deduce_dlrn_local_build(Pr, Name, Branch, Context, Path),
-    deduce_dlrn_build(Pr, Name, Branch, Context, Path).
+    deduce_dlrn_local_build(Pr, Name, Branch, Context, Path, Sha),
+    deduce_dlrn_build(Pr, Name, Branch, Context, Sha).
 
-deduce_dlrn_local_build(Pr, Name, Branch, Context, Path) :-
-    get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Path)),
+get_sha(Name, _, Pr, Sha) :-
+    get_fact(github_updated_pr(_, Name, Pr, Sha, _)).
+
+get_sha(Name, Branch, Pr, Sha) :-
+    get_fact(github_pr_sha(_, Name, Pr, Sha)),
+    not(get_longterm_fact(dlrn_local_build(Pr, Name, Branch, _, Sha))).
+
+deduce_dlrn_local_build(Pr, Name, Branch, Context, _, Sha) :-
+    get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Sha)),
     !.
 
-deduce_dlrn_local_build(Pr, Name, Branch, Context, Path) :-
-    not(get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Path))),
+deduce_dlrn_local_build(Pr, Name, Branch, Context, Path, Sha) :-
+    not(get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Sha))),
     build_pr(Name, Branch, Path, Pr),
-    store_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Path)),
+    store_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Sha)),
     format(string(Text), "built package ~w ~w locally with updated PR ~w (~w)",
-           [Name, Branch, Pr, Path]),
+           [Name, Branch, Pr, Sha]),
     notify(Text, Context).
 
-deduce_dlrn_build(Pr, Name, Branch, Context, Path) :-
-    get_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path)),
+deduce_dlrn_build(Pr, Name, Branch, Context, Sha) :-
+    get_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Sha)),
     !.
 
-deduce_dlrn_build(Pr, Name, Branch, Context, Path) :-
-    not(get_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path))),
+deduce_dlrn_build(Pr, Name, Branch, Context, Sha) :-
+    not(get_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Sha))),
     publish_patch(Name, Branch, Pr),
-    store_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Path)),
-    format(string(Text), "updated dlrn package ~w ~w with PR ~w", [Name, Branch, Pr]),
+    store_longterm_fact(dlrn_published(Pr, Name, Branch, Context, Sha)),
+    format(string(Text), "updated dlrn package ~w ~w with PR ~w (~w)", [Name, Branch, Pr, Sha]),
     notify(Text, Context).
+
+dlrn_path(Sha, Path) :-
+    sub_string(Sha, 0, 2, _, First),
+    sub_string(Sha, 2, 2, _, Second),
+    format(string(Path), "~w/~w/~w", [First, Second, Sha]).
 
 :- add_fact_deducer(dlrn:deduce_dlrn_facts).
 
