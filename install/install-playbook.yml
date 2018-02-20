@@ -1,0 +1,69 @@
+---
+- hosts: botsito
+  tasks:
+    - block:
+      - name: Install the required packages
+        package:
+          name: '{{ item }}'
+        with_items:
+          - git
+          - pl
+          - mock
+          - fortune-mod
+          - tmux
+          - libselinux-python
+
+      - name: Make botsito part of the mock group
+        user:
+          name: botsito
+          comment: "Botsito el bot mas bonito"
+          groups: mock
+
+      become: True
+
+    - block:
+      - name: Create the ~/.ssh dir
+        file:
+          path: ~/.ssh
+          state: directory
+        when: botsito_path_to_privatekey is defined and botsito_path_to_publickey is defined
+
+      - name: Copy keys
+        copy:
+          src: '{{ item.src }}'
+          dest: '{{ item.dest }}'
+          mode: '{{ item.mode }}'
+        with_items:
+          - {'src': '{{ botsito_path_to_privatekey }}', 'dest': '~/.ssh/id_rsa', 'mode': '0600'}
+          - {'src': '{{ botsito_path_to_publickey }}', 'dest': '~/.ssh/id_rsa.pub', 'mode': '0644'}
+        when: botsito_path_to_privatekey is defined and botsito_path_to_publickey is defined
+
+      - name: Copy install-dependencies.pl over
+        copy:
+          src: install-dependencies.pl
+          dest: ~/install-dependencies.pl
+
+      - name: Install prolog dependencies
+        shell: echo -e "y\n1\n1\ny" | swipl -s install-dependencies.pl -t halt
+
+      - name: Install botsito from Github
+        git:
+          repo: https://github.com/fredericlepied/sbot
+          dest: ~/botsito
+
+      - name: Retrieve botsito configuration
+        git:
+          repo: '{{ botsito_config_url }}'
+          dest: ~/botsito-config
+
+      - name: Link botsito config.pl into proper dir
+        file:
+          src: ~/botsito-config/config.pl
+          dest: ~/botsito/config.pl
+          state: link
+
+      - name: Start botsito
+        shell: tmux new-session -s botsito -d && tmux send -t botsito 'cd ~/botsito && ./bot.sh' ENTER
+
+      become: True
+      become_user: botsito
