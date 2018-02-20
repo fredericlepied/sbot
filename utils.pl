@@ -1,7 +1,7 @@
 %% -*- prolog -*-
 
 :- module(utils,
-          [cmd/2, cmd/3, cmd/4, string_join/3
+          [cmd/2, cmd/3, cmd/4, string_join/3, dirbase/3
           ]).
 
 
@@ -45,5 +45,11 @@ string_join(Sep, [First|Rest], Res) :-
     string_join(Sep, Rest, RestTxt),
     string_concat(FirstSep, RestTxt, Res),
     !.
+
+dirbase(Dir, Base, Path) :-
+    split_string(Path, "/", "", L),
+    reverse(L, [Base|R]),
+    reverse(R, RR),
+    string_join("/", RR, Dir).
 
 %% utils.pl ends here
