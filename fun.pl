@@ -22,11 +22,14 @@ fun_answer(["fortune"|Args], _, Answer) :-
     cmd("fortune ~w", ArgsText, Lines, _),
     string_join("\n", Lines, Answer).
 
+fun_answer(["weather", Location], _, "Good Moon") :-
+    string_lower(Location, "moon").
+
 fun_answer(["weather", Location], _, Answer) :-
     format(string(WttrUrl), "http://wttr.in/~w?0T", [Location]),
     setup_call_cleanup(
         http_open(WttrUrl, In, [user_agent("curl/7.55.1")]),
-        load_html(In, Answer, []),
+        load_html(In, [Answer], []),
         close(In)
     ).
 
