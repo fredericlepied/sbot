@@ -12,7 +12,10 @@ config(irc_nick, "sbot").
 config(irc_channels, ["##testbot"]).
 
 %% add the optional modules you want to activate to the list
-config(modules, [dlrn, irc, self, autoupdate, github, puddle, fun, fedora]).
+config(modules, [dlrn, irc, self, autoupdate, github, puddle, fun, fedora, admin]).
+
+%% admin-team members
+config(admins, ["admin-1", "admin-2"]).
 
 %% dlrn and github settings
 config(dlrn_status_url, ["systemd", "master", "http://38.145.33.116/systemd-master/"]).
