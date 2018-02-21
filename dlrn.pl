@@ -103,17 +103,23 @@ dlrn_path(Sha, Path) :-
 % already reproduced build issue
 dlrn_solver(Gen) :-
     get_fact(dlrn_problem(Name, Branch, Path)),
-    get_old_fact(dlrn_reproduced(Name, Branch, Path)),
-    store_fact(Gen, dlrn_reproduced(Name, Branch, Path)).
+    get_old_fact(dlrn_reproduced(Name, Branch, Path, Status)),
+    store_fact(Gen, dlrn_reproduced(Name, Branch, Path, Status)).
 
-% reproduced build issue
+% reproduced build issue if not already tried
 dlrn_solver(Gen) :-
     get_fact(dlrn_problem(Name, Branch, RelPath)),
+    not(get_old_fact(dlrn_reproduced(Name, Branch, RelPath, _))),
     config(dlrn_status_url, [Name, Branch, Url]),
     download_srcrpm(Url, RelPath, Path),
-    not(build_srcrpm(Path)),
-    store_fact(Gen, dlrn_reproduced(Name, Branch, RelPath)),
-    format(string(Text), "** DLRN ansible build problem reproduced for ~w ~w", [Name, Branch]),
+    (build_srcrpm(Path) -> Status = success; Status = failure),
+    writeln(Status),
+    store_fact(Gen, dlrn_reproduced(Name, Branch, RelPath, Status)),
+    (Status == success ->
+         format(string(Text), "** DLRN ansible build problem not reproduced for ~w ~w",
+                [Name, Branch]);
+     format(string(Text), "** DLRN ansible build problem reproduced for ~w ~w",
+            [Name, Branch])),
     notify(Text, []).
 
 :- add_fact_solver(dlrn:dlrn_solver).
@@ -217,11 +223,6 @@ git(Project, GitUrl) :-
     config(github, [Owner, Project]),
     format(string(GitUrl), "https://github.com/~w/~w", [Owner, Project]).
 
-workspace(W) :-
-    getenv("HOME", Home),
-    string_concat(Home, "/workspace", W),
-    mkdir(W).
-
 distgit_workspace(Name, Dir) :-
     string_concat(Name, "-distgit", DistGitName),
     git_workspace(DistGitName, Dir).
@@ -243,12 +244,6 @@ git_workspace_aux(_, W, Url, Name) :-
 git_extract_pr(Name, Pr) :-
     git_workspace(Name, Dir),
     cmd("cd ~w; git-extract-pr.sh ~w", [Dir, Pr]).
-
-mkdir(D) :-
-    exists_directory(D), !.
-
-mkdir(D) :-
-    make_directory(D).
 
 get_last_path(Name, Branch, Path) :-
     get_fact(dlrn_info(Name, Branch, [[_,[_,Path,_]]|_])).
