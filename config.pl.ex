@@ -1,8 +1,6 @@
 %% -*- prolog -*-
 
-:- module(config,
-          [config/2
-          ]).
+:- module(config, [config/2]).
 
 %% settings for irc.pl module
 
@@ -14,7 +12,7 @@ config(irc_nick, "sbot").
 config(irc_channels, ["##testbot"]).
 
 %% add the optional modules you want to activate to the list
-config(modules, [dlrn, irc, self, autoupdate, github, puddle, fun]).
+config(modules, [dlrn, irc, self, autoupdate, github, puddle, fun, fedora]).
 
 %% dlrn and github settings
 config(dlrn_status_url, ["systemd", "master", "http://38.145.33.116/systemd-master/"]).
@@ -25,5 +23,8 @@ config(github, ["ansible", "ansible"]).
 
 config(gitrepo, ["ansible-distgit", "git://pkgs.fedoraproject.org/rpms/ansible"]).
 config(gitrepo, ["systemd-distgit", "git://pkgs.fedoraproject.org/rpms/systemd"]).
+
+%% fedora settings
+%config(fedora_user, "user").
 
 %% config.pl ends here

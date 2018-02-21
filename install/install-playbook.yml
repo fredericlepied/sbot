@@ -12,6 +12,8 @@
           - fortune-mod
           - tmux
           - libselinux-python
+          - fedpkg
+          - spectool
 
       - name: Make botsito part of the mock group
         user:

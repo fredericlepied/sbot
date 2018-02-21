@@ -1,6 +1,6 @@
 %% -*- prolog -*-
 
-:- module(world, [get_facts/0, store_fact/2, add_fact_updater/1,
+:- module(world, [get_facts/0, store_fact/1, store_fact/2, add_fact_updater/1,
                   add_fact_deducer/1, add_fact_solver/1, fact_loop/0,
                   get_fact/1, get_old_fact/1, store_longterm_fact/1,
                   get_longterm_fact/1, last_gen/1, remove_longterm_fact/1
@@ -23,6 +23,10 @@ get_old_fact(Fact) :-
 
 get_longterm_fact(Fact) :-
     longterm(Fact).
+
+store_fact(Fact) :-
+    last_gen(Gen),
+    store_fact(Gen, Fact).
 
 store_fact(Gen, Fact) :-
     fact(Gen, Fact),
