@@ -72,9 +72,10 @@ deduce_dlrn_local_build(Pr, Name, Branch, Context, Path, Sha) :-
     not(get_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Sha, _))),
     (build_pr(Name, Branch, Path, Pr) -> Status = success; Status = failure),
     store_longterm_fact(dlrn_local_build(Pr, Name, Branch, Context, Sha, Status)),
-    format(string(Text), "built package ~w ~w locally with updated PR ~w (~w): ~w",
-           [Name, Branch, Pr, Sha, Status]),
-    notify(Text, Context).
+    format(string(Text), "built package ~w ~w locally with updated PR ~w (~w): ",
+           [Name, Branch, Pr, Sha]),
+    colored(Status, Colored),
+    notify([Text, Colored], Context).
 
 % dlrn publish patch for PR
 deduce_dlrn_publish(Pr, Name, Branch, Context, Sha) :-
@@ -93,6 +94,9 @@ dlrn_path(Sha, Path) :-
     sub_string(Sha, 0, 2, _, First),
     sub_string(Sha, 2, 2, _, Second),
     format(string(Path), "~w/~w/~w", [First, Second, Sha]).
+
+colored(success, green("success")).
+colored(failure, red("failure")).
 
 :- add_fact_deducer(dlrn:deduce_dlrn_facts).
 

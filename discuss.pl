@@ -39,10 +39,12 @@ public_message(Id, TextList, Nick, Chan) :-
     send_message(Answer, Context).
 
 send_message(Text, [Id, Nick]) :-
-    priv_msg(Id, Text, Nick).
+    encode(Text, Encoded),
+    priv_msg(Id, Encoded, Nick).
 
 send_message(Text, [Id, _, Chan]) :-
-    priv_msg(Id, Text, Chan).
+    encode(Text, Encoded),
+    priv_msg(Id, Encoded, Chan).
 
 add_answerer(Pred) :-
     asserta(answerer(Pred)).
@@ -79,6 +81,10 @@ answer([Help], Context, Answer) :-
 answer(_, Context, Answer) :-
     add_prefix(Context, "not understood. Use 'help' to list what I understand.", Answer).
 
+add_prefix([_, Nick, _], [Text|Rest], [PrefixedText,Text|Rest]) :-
+    format(string(PrefixedText), "~w: ", [Nick]),
+    !.
+
 add_prefix([_, Nick, _], Text, PrefixedText) :-
     format(string(PrefixedText), "~w: ~w", [Nick, Text]),
     !.
@@ -96,5 +102,71 @@ notify(Text, []) :-
 notify(Text, Context) :-
     add_prefix(Context, Text, PrefixedText),
     send_message(PrefixedText, Context).
+
+encode([Entry|Rest], Output) :-
+    encode_irc([Entry|Rest], List),
+    !,
+    string_join("", List, Output).
+
+encode(Text, Text).
+
+encode_irc([], []).
+
+encode_irc([Text|Rest], [Encoded|EncodedRest]) :-
+    encode_irc(Text, Encoded),
+    encode_irc(Rest, EncodedRest).
+
+encode_irc(white(Text), Encoded) :-
+    irc_color("00", Text, Encoded).
+
+encode_irc(black(Text), Encoded) :-
+    irc_color("01", Text, Encoded).
+
+encode_irc(blue(Text), Encoded) :-
+    irc_color("02", Text, Encoded).
+
+encode_irc(green(Text), Encoded) :-
+    irc_color("03", Text, Encoded).
+
+encode_irc(red(Text), Encoded) :-
+    irc_color("04", Text, Encoded).
+
+encode_irc(brown(Text), Encoded) :-
+    irc_color("05", Text, Encoded).
+
+encode_irc(purple(Text), Encoded) :-
+    irc_color("06", Text, Encoded).
+
+encode_irc(orange(Text), Encoded) :-
+    irc_color("07", Text, Encoded).
+
+encode_irc(yellow(Text), Encoded) :-
+    irc_color("08", Text, Encoded).
+
+encode_irc(teal(Text), Encoded) :-
+    irc_color("09", Text, Encoded).
+
+encode_irc(cyan(Text), Encoded) :-
+    irc_color("10", Text, Encoded).
+
+encode_irc(light_cyan(Text), Encoded) :-
+    irc_color("11", Text, Encoded).
+
+encode_irc(light_blue(Text), Encoded) :-
+    irc_color("12", Text, Encoded).
+
+encode_irc(pink(Text), Encoded) :-
+    irc_color("13", Text, Encoded).
+
+encode_irc(grey(Text), Encoded) :-
+    irc_color("14", Text, Encoded).
+
+encode_irc(light_grey(Text), Encoded) :-
+    irc_color("15", Text, Encoded).
+
+encode_irc(Text, Text).
+
+irc_color(Color, Text, Encoded) :-
+    format(string(Encoded), "\x03\~w~w\x03", [Color,Text]).
 
 %% discuss.pl ends here

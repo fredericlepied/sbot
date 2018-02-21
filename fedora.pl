@@ -18,15 +18,19 @@ deduce_fedora_facts(_) :-
     (clone_and_mockbuild(User, Ws, Pkg, Version) ->
          Status = success;
      Status = failure),
-    format(string(Text), "Updated package ~w to ~w: ~w", [Pkg, Version, Status]),
+    format(string(Text), "Updated package ~w to ~w: ", [Pkg, Version]),
     remove_longterm_fact(fedora_update_package(Pkg, Version, Context)),
-    notify(Text, Context).
+    color(Status, Colored),
+    notify([Text, Colored], Context).
 
 get_user(User) :-
     config(fedora_user, User),
     !.
 
 get_user("").
+
+color(success, green("success")).
+color(failure, red("failure")).
 
 :- add_fact_deducer(fedora:deduce_fedora_facts).
 
