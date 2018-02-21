@@ -8,7 +8,6 @@ set -u
 
 WS="$2"
 PKG="$3"
-VER="$4"
 
 set -x
 
@@ -26,16 +25,9 @@ if [ ! -d $PKG ]; then
     cd $PKG
 else
     cd $PKG
+    git stash
     git checkout master
     git pull
 fi
 
-sed -i -e "s/Version: \(.*\)/Version: $VER/" -e "s/Release: \([0-9.]*\)/Release: 1/" *.spec
-
-git diff
-
-spectool -S -g *.spec
-
-fedpkg mockbuild
-
-# fedora_update_pkg.sh ends here
+# fedora_get_distgit.sh ends here

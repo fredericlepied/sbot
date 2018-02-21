@@ -2,6 +2,7 @@
 
 :- module(fedora, []).
 
+:- use_module(config).
 :- use_module(discuss).
 :- use_module(utils).
 :- use_module(world).
@@ -14,7 +15,7 @@ deduce_fedora_facts(_) :-
     get_longterm_fact(fedora_update_package(Pkg, Version, Context)),
     workspace(Ws),
     get_user(User),
-    (cmd("fedora_update_pkg.sh '~w' ~w/fedora ~w ~w", [User, Ws, Pkg, Version]) ->
+    (clone_and_mockbuild(User, Ws, Pkg, Version) ->
          Status = success;
      Status = failure),
     format(string(Text), "Updated package ~w to ~w: ~w", [Pkg, Version, Status]),
@@ -45,5 +46,14 @@ fedora_answer(["fedora", "update", Pkg, "to", Version], Context, Answer) :-
            [Pkg, Version]).
 
 :- add_answerer(fedora:fedora_answer).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% action predicates
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+clone_and_mockbuild(User, Ws, Pkg, Version) :-
+    cmd("fedora_get_distgit.sh '~w' ~w/fedora ~w", [User, Ws, Pkg]),
+    cmd("rpmspec_set_vr.sh ~w/fedora/~w ~w 1", [Ws, Pkg, Version]),
+    cmd("fedora_fedpkg.sh ~w/fedora/~w mockbuild", [Ws, Pkg]).
 
 %% fedora.pl ends here
