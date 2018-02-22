@@ -40,10 +40,15 @@ store_longterm_fact(Fact) :-
     !.
 
 store_longterm_fact(Fact) :-
-    asserta(longterm(Fact)).
+    asserta(longterm(Fact)),
+    save.
 
 remove_longterm_fact(Fact) :-
-    retractall(longterm(Fact)).
+    retractall(longterm(Fact)),
+    save.
+
+save() :-
+    tell('save.pl'), listing(longterm/1), told.
 
 add_fact_updater(Updater) :-
     fact_updater(Updater),
@@ -114,8 +119,7 @@ get_facts(Gen) :-
     format('Deducing facts for gen ~w~n', [Gen]),
     deduce_facts(Gen),
     format('Solving facts for gen ~w~n', [Gen]),
-    solve_facts(Gen),
-    tell('save.pl'), listing(longterm/1), told.
+    solve_facts(Gen).
 
 get_facts :-
     asserta(last_gen(1)),
