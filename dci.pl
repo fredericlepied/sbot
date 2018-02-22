@@ -53,6 +53,14 @@ dci_solver(_) :-
     format(string(Text), "** [~w][~w] new component uploaded ~w (first one)", [Product, Topic, NewComponent]),
     notify(Text, []).
 
+dci_solver(_) :-
+    get_fact(dci_component(_, Topic, NewComponent)),
+    get_fact(puddle_info(Topic, _, "latest", Puddle)),
+    split_string(NewComponent, " ", "", [_, ComponentPuddle]),
+    ComponentPuddle \== Puddle,
+    format(string(Text), "** DCI out of sync for ~w. DCI version: ~w | Puddle available: ~w", [Topic, ComponentPuddle, Puddle]),
+    notify(Text, []).
+
 :- add_fact_solver(dci:dci_solver).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
