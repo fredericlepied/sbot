@@ -26,7 +26,7 @@ fun_answer(["weather", Location], _, "Good Moon") :-
     string_lower(Location, "moon").
 
 fun_answer(["weather", Location], _, Answer) :-
-    format(string(WttrUrl), "http://wttr.in/~w?0T", [Location]),
+    format(string(WttrUrl), "http://wttr.in/~w?m0T", [Location]),
     setup_call_cleanup(
         http_open(WttrUrl, In, [user_agent("curl/7.55.1")]),
         load_html(In, [Answer], []),
