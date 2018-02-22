@@ -12,7 +12,7 @@ config(irc_nick, "sbot").
 config(irc_channels, ["##testbot"]).
 
 %% add the optional modules you want to activate to the list
-config(modules, [dlrn, irc, self, autoupdate, github, puddle, fun, fedora, admin]).
+config(modules, [dlrn, irc, self, autoupdate, github, puddle, fun, fedora, admin, dci]).
 
 %% admin-team members
 config(admins, ["admin-1", "admin-2"]).
@@ -29,5 +29,9 @@ config(gitrepo, ["systemd-distgit", "git://pkgs.fedoraproject.org/rpms/systemd"]
 
 %% fedora settings
 %config(fedora_user, "user").
+
+%% dci settings
+% config(dci_login, "login").
+% config(dci_password, "password").
 
 %% config.pl ends here
