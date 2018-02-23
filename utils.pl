@@ -1,9 +1,16 @@
 %% -*- prolog -*-
 
 :- module(utils,
-          [cmd/2, cmd/3, cmd/4, string_join/3, dirbase/3, workspace/1
+          [cmd/2, cmd/3, cmd/4, string_join/3, dirbase/3, workspace/1, get_config/3
           ]).
 
+:- use_module(config).
+
+get_config(Key, Value, _) :-
+    config(Key, Value),
+    !.
+
+get_config(_, Value, Value).
 
 cmd(Fmt, Args) :-
     format(string(Cmd), Fmt, Args),
