@@ -12,6 +12,8 @@ The `hosts` file looks like:
 botsito.example.com ansible_python_interpreter=/usr/bin/python3
 ```
 
+Before running the playbook, one needs to install the needed modules: `ansible-galaxy install -r install-roles.yml -p roles`
+
 Then simply run: `ansible-playbook -i hosts install-playbook.yml -e @settings.yml`
 
 At the end of the run, you will have sbot running on a tmux session on your target host.

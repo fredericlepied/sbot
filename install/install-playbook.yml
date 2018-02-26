@@ -15,15 +15,28 @@
           - fedpkg
           - spectool
 
+      - include_role:
+          name: httpd
+
       - name: Make botsito part of the mock group
         user:
           name: botsito
           comment: "Botsito el bot mas bonito"
           groups: mock
 
+      - name: Set $HOME to 701 for mod_userdir
+        file:
+          path: /home/botsito
+          mode: '0701'
+
       become: True
 
     - block:
+      - name: Create the public_html dir
+        file:
+          path: ~/public_html
+          state: directory
+
       - name: Create the ~/.ssh dir
         file:
           path: ~/.ssh
