@@ -83,21 +83,24 @@ get_dci_components(Components) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % dci help
-dci_answer(List, _, "dci components: display the list of available components.") :-
+dci_answer(List, _, Answer) :-
     member("dci", List),
-    member("help", List).
+    member("help", List),
+    format(string(Answer), "~n~w~n~w", ["dci products: display the list of available products.", "dci components <Product>: display the list of latest components for a product."]).
 
-% dci components
-dci_answer(["dci", "components"], _, Answer) :-
-    findall(Str, dci_answer(Str), Component),
-    string_join(" ", Component, ComponentText),
-    format(string(Answer), "~w", [ComponentText]).
+% dci products
+dci_answer(["dci", "products"], _, Answer) :-
+    findall(Product, get_fact(dci_component(Product, _,_)), Products),
+    sort(Products, ProductsSorted),
+    string_join(", ", ProductsSorted, ProductsText),
+    format(string(Answer), "Available Products: ~w", [ProductsText]).
 
-% dci components <Prodduct>
+% dci components <Product>
 dci_answer(["dci", "components", Product], _, Answer) :-
-    findall(Str, dci_answer(Product, Str), Component),
-    string_join(" ", Component, ComponentText),
-    format(string(Answer), "~w", [ComponentText]).
+    findall(Str, dci_answer(Product, Str), Components),
+    sort(Components, ComponentsSorted),
+    string_join(" ", ComponentsSorted, ComponentsText),
+    format(string(Answer), "~w", [ComponentsText]).
 
 dci_answer(Product, Answer) :-
     get_fact(dci_component(Product, Topic, Name)),
