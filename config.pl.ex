@@ -2,6 +2,9 @@
 
 :- module(config, [config/2]).
 
+%% world setting
+config(refresh_time, 300).
+
 %% settings for irc.pl module
 
 config(irc_server, 'irc.freenode.org').

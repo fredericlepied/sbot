@@ -7,6 +7,7 @@
                  ]).
 
 :- use_module(library(persistency)).
+:- use_module(config).
 
 :- dynamic fact/2, longterm/1, fact_updater/1, fact_deducer/1, fact_solver/1, last_gen/1.
 
@@ -140,7 +141,8 @@ forever :-
     % Keep only the previous generation of facts
     Prev is Gen - 2,
     retractall(fact(Prev,_)),
-    sleep(300),
+    config(refresh_time, RefreshTime),
+    sleep(RefreshTime),
     fail.
 
 %% world.pl ends here
