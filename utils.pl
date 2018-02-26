@@ -1,7 +1,7 @@
 %% -*- prolog -*-
 
 :- module(utils,
-          [cmd/2, cmd/3, cmd/4, string_join/3, dirbase/3, workspace/1, get_config/3
+          [cmd/2, cmd/3, cmd/4, string_join/3, dirbase/3, workspace/2, url_workspace/2, get_config/3
           ]).
 
 :- use_module(config).
@@ -62,15 +62,25 @@ dirbase(Dir, Base, Path) :-
     reverse(R, RR),
     string_join("/", RR, Dir).
 
-workspace(W) :-
-    getenv("HOME", Home),
-    string_concat(Home, "/workspace", W),
+url_workspace(Module, Url) :-
+    (config(workspace_url, WsUrl) -> true; 
+     (getenv("USER", User),
+      format(string(WsUrl), "http://localhost/~~~w/", [User]))),
+    format(string(Url), "~w~w/", [WsUrl, Module]).
+
+workspace(Module, W) :-
+    (config(workspace, Ws) -> true; 
+     (getenv("HOME", Home),
+      format(string(Ws), "~w/public_html", [Home]))),
+    format(string(W), "~w/~w", [Ws, Module]),
     mkdir(W).
 
 mkdir(D) :-
     exists_directory(D), !.
 
 mkdir(D) :-
+    dirbase(Dir, _, D),
+    mkdir(Dir),
     make_directory(D).
 
 %% utils.pl ends here

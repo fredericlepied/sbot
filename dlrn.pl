@@ -1,7 +1,7 @@
 %% -*- prolog -*-
 
 :- module(dlrn,
-          [git/2, workspace/1, git_workspace/2, git_extract_pr/2,
+          [git/2, git_workspace/2, git_extract_pr/2,
            get_dlrn_fact/3, dlrn_last_bad/3, dlrn_status/4,
            build_pr/4, distgit_workspace/2, publish_patch/3
           ]).
@@ -233,7 +233,7 @@ distgit_workspace(Name, Dir) :-
 
 git_workspace(Name, Dir) :-
     git(Name, Url),
-    workspace(W),
+    workspace("dlrn", W),
     format(atom(Dir), "~w/~w", [W, Name]),
     git_workspace_aux(Dir, W, Url, Name).
 
@@ -253,7 +253,7 @@ get_last_path(Name, Branch, Path) :-
     get_fact(dlrn_info(Name, Branch, [[_,[_,Path,_]]|_])).
 
 download_srcrpm(Url, RelPath, Path) :-
-    workspace(Ws),
+    workspace("dlrn", Ws),
     cmd("dlrn_download_srcrpm.sh ~w ~w ~w", [Ws, Url, RelPath]),
     format(string(Path), "~w/~w", [Ws, RelPath]).
 
@@ -264,18 +264,18 @@ build_pr(Name, Branch, RelPath, Pr) :-
     config(dlrn_status_url, [Name, Branch, Url]),
     download_srcrpm(Url, RelPath, Path),
     git_extract_pr(Name, Pr),
-    workspace(Ws),
+    workspace("dlrn", Ws),
     cmd("dlrn_inject_patch.sh ~w ~w/~w/pr-~w.patch", [Path, Ws, Name, Pr]),
     build_srcrpm(Path).
 
 publish_patch(Name, Branch, Pr) :-
-    workspace(Ws),
+    workspace("dlrn", Ws),
     distgit_workspace(Name, Dir),
     string_concat("rpm-", Branch, DistGitBranch),
     cmd("dlrn_publish_patch.sh ~w ~w/~w/pr-~w.patch ~w", [Dir, Ws, Name, Pr, DistGitBranch]).
 
 remove_patch(Name, Branch, Pr) :-
-    workspace(Ws),
+    workspace("dlrn", Ws),
     distgit_workspace(Name, Dir),
     string_concat("rpm-", Branch, DistGitBranch),
     cmd("dlrn_unpublish_patch.sh ~w pr-~w.patch ~w", [Dir, Ws, Name, Pr, DistGitBranch]).

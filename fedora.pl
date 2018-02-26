@@ -13,15 +13,17 @@
 
 deduce_fedora_facts(_) :-
     get_longterm_fact(fedora_update_package(Pkg, Version, Context)),
-    workspace(Ws),
+    workspace("fedora", Ws),
+    url_workspace("fedora", Url),
     get_user(User),
     (clone_and_mockbuild(User, Ws, Pkg, Version) ->
          Status = success;
      Status = failure),
     format(string(Text), "Updated package ~w to ~w: ", [Pkg, Version]),
+    format(string(Text2), " (~w~w) ", [Url, Pkg]),
     remove_longterm_fact(fedora_update_package(Pkg, Version, Context)),
     color(Status, Colored),
-    notify([Text, Colored], Context).
+    notify([Text, Colored, Text2], Context).
 
 get_user(User) :-
     config(fedora_user, User),
