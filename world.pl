@@ -40,7 +40,7 @@ store_longterm_fact(Fact) :-
     !.
 
 store_longterm_fact(Fact) :-
-    asserta(longterm(Fact)),
+    assertz(longterm(Fact)),
     save.
 
 remove_longterm_fact(Fact) :-
