@@ -55,6 +55,21 @@ deduce_dlrn_facts(_) :-
     deduce_dlrn_local_build(Pr, Name, Branch, Context, Path, Sha),
     deduce_dlrn_publish(Pr, Name, Branch, Context, Sha).
 
+% remove PR from package
+deduce_dlrn_facts(_) :-
+    get_longterm_fact(dlrn_remove_pr(Pr, Name, Branch, Context)),
+    (remove_patch(Name, Branch, Pr) -> 
+         (format(string(Text), "removed PR ~w from package ~w ~w",
+                 [Pr, Name, Branch]),
+          notify(Text, Context),
+          remove_longterm_fact(dlrn_remove_pr(Pr, Name, Branch, _)),
+          remove_longterm_fact(dlrn_apply_pr(Pr, Name, Branch, _)),
+          remove_longterm_fact(github_track_pr(_, Name, Pr, _)),
+          remove_longterm_fact((dlrn_published(Pr, Name, Branch, _, _))));
+     (format(string(Text), "unable to remove PR ~w from package ~w ~w",
+             [Pr, Name, Branch]),
+      notify(Text, Context))).
+
 % not built sha
 get_sha(Name, _, Pr, Sha) :-
     get_fact(github_updated_pr(_, Name, Pr, Sha, _)).
@@ -186,7 +201,7 @@ basename(Name, Base) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % dlrn help
-dlrn_answer(List, _, "dlrn: display the status of all the DLRN instances.\ndlrn <package>: display DLRN status for this package.\ndlrn apply pr <pr> to <package> <branch>.") :-
+dlrn_answer(List, _, "dlrn: display the status of all the DLRN instances.\ndlrn <package>: display DLRN status for this package.\ndlrn apply pr <pr> to <package> <branch>.\ndlrn remove pr <pr> from <package> <branch>.") :-
     member("dlrn", List),
     member("help", List).
 
@@ -194,7 +209,13 @@ dlrn_answer(List, _, "dlrn: display the status of all the DLRN instances.\ndlrn 
 dlrn_answer(["dlrn", "apply", "pr", Pr, "to", Name, Branch], Context, Answer) :-
     store_longterm_fact(dlrn_apply_pr(Pr, Name, Branch, Context)),
     github_answer(["github", "trackpr", Name, Name, Pr], Context, _),
-    format(string(Answer), "ok added PR ~w to ~w ~w to my backlog.", [Pr, Name, Branch]).
+    format(string(Answer), "ok added applying PR ~w to ~w ~w to my backlog.", [Pr, Name, Branch]).
+
+% dlrn remove pr 35917 from ansible devel
+dlrn_answer(["dlrn", "remove", "pr", Pr, "from", Name, Branch], Context, Answer) :-
+    store_longterm_fact(dlrn_remove_pr(Pr, Name, Branch, Context)),
+    github_answer(["github", "trackpr", Name, Name, Pr], Context, _),
+    format(string(Answer), "ok added removing PR ~w from ~w ~w to my backlog.", [Pr, Name, Branch]).
 
 % dlrn ansible
 dlrn_answer(List, _, Answer) :-
@@ -275,9 +296,8 @@ publish_patch(Name, Branch, Pr) :-
     cmd("dlrn_publish_patch.sh ~w ~w/~w/pr-~w.patch ~w", [Dir, Ws, Name, Pr, DistGitBranch]).
 
 remove_patch(Name, Branch, Pr) :-
-    workspace("dlrn", Ws),
     distgit_workspace(Name, Dir),
     string_concat("rpm-", Branch, DistGitBranch),
-    cmd("dlrn_unpublish_patch.sh ~w pr-~w.patch ~w", [Dir, Ws, Name, Pr, DistGitBranch]).
+    cmd("dlrn_unpublish_patch.sh ~w pr-~w.patch ~w", [Dir, Pr, DistGitBranch]).
 
 %% dlrn.pl ends here
