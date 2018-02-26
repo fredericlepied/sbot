@@ -1,7 +1,8 @@
 %% -*- prolog -*-
 
-:- use_module(world).
 :- use_module(config).
+:- use_module(utils).
+:- use_module(world).
 
 load_all :-
     config(modules, Modules),
@@ -12,6 +13,7 @@ load_all :-
 load_all :-
     true.
 
+:- load_external_modules.
 :- load_all.
 
 %% load.pl ends here

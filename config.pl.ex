@@ -11,6 +11,11 @@ config(irc_nick, "sbot").
 % the first chan will get the notifications
 config(irc_channels, ["##testbot"]).
 
+%% Configure external modules stored in git for prolog modules or for
+%% config.pl. If the modules has a tools subdir it will be added
+%% automatically to the PATH env variable.
+%config(external_git_module, "file:///home/sbot/repo/sbot-config").
+
 %% add the optional modules you want to activate to the list
 config(modules, [dlrn, irc, self, autoupdate, github, puddle, fun, fedora, admin, dci]).
 

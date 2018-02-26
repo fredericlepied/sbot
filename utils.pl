@@ -1,7 +1,8 @@
 %% -*- prolog -*-
 
 :- module(utils,
-          [cmd/2, cmd/3, cmd/4, string_join/3, dirbase/3, workspace/2, url_workspace/2, get_config/3
+          [cmd/2, cmd/3, cmd/4, string_join/3, dirbase/3, workspace/2, url_workspace/2, get_config/3,
+           load_external_modules/0
           ]).
 
 :- use_module(config).
@@ -82,5 +83,28 @@ mkdir(D) :-
     dirbase(Dir, _, D),
     mkdir(Dir),
     make_directory(D).
+
+load_external_modules :-
+    findall(Url, (config(external_git_module, Url),
+                  load_external_module(Url)), _).
+
+load_external_module(GitUrl) :-
+    cmd("extract_module.sh ~w", [GitUrl]),
+    dirbase(_, Base, GitUrl),
+    format(string(Path), "modules/~w", [Base]),
+    export_tools_path(Path),
+    file_search_path(swi, Path).
+
+export_tools_path(RelPath) :-
+    absolute_file_name(RelPath, Abs),
+    format(string(ToolsDir), "~w/tools", [Abs]),
+    exists_directory(ToolsDir),
+    getenv("PATH", Paths),
+    split_string(Paths, ":", "", List),
+    string_join(":", [ToolsDir|List], NewPaths),
+    setenv("PATH", NewPaths),
+    writeln(setenv("PATH", NewPaths)).
+
+export_tools_path(_).
 
 %% utils.pl ends here

@@ -12,7 +12,10 @@ export PATH=$CURDIR/tools:$PATH
 cd $CURDIR
 
 if [ ! -r config.pl ]; then
-    cp config.pl.ex config.pl
+    ln -s modules/*/config.pl . >& /dev/null
+    if [ ! -r config.pl ]; then
+        cp config.pl.ex config.pl
+    fi
 fi
 
 if [ ! -r save.pl ]; then
