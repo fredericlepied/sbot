@@ -15,9 +15,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 update_dci_facts(Gen) :-
-    get_dci_components(Components),
-    member(Component, Components.components),
-    store_fact(Gen, dci_component(Component.product_name, Component.topic_name, Component.name)).
+    get_dci_jobs(Jobs),
+    member(Component, Jobs.globalStatus),
+    store_fact(Gen, dci_component(Component.product_name, Component.topic_name, Component.name)),
+    member(Job, Component.jobs),
+    store_fact(Gen, dci_job(Component.product_name, Component.topic_name, Component.name, Job.team_name, Job.remoteci_name, Job.status, Job.id)).
 
 :- add_fact_updater(dci:update_dci_facts).
 
@@ -67,14 +69,14 @@ dci_solver(_) :-
 %% status predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-get_dci_components(Components) :-
+get_dci_jobs(Status) :-
     config(dci_login, DciLogin),
     config(dci_password, DciPassword),
     setup_call_cleanup(
-        http_open("https://api.distributed-ci.io/api/v1/components/latest",
+        http_open("https://api.distributed-ci.io/api/v1/global_status",
                   In,
                   [authorization(basic(DciLogin, DciPassword))]),
-        json_read_dict(In, Components),
+        json_read_dict(In, Status),
         close(In)
     ).
 
