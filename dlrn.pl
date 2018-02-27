@@ -131,16 +131,29 @@ dlrn_solver(Gen) :-
     not(get_old_fact(dlrn_reproduced(Name, Branch, RelPath, _))),
     config(dlrn_status_url, [Name, Branch, Url]),
     download_srcrpm(Url, RelPath, Path),
+    !,
+    url_workspace("dlrn", WsUrl),
     (build_srcrpm(Path) -> Status = success; Status = failure),
-    writeln(Status),
     store_fact(Gen, dlrn_reproduced(Name, Branch, RelPath, Status)),
     (Status == success ->
-         format(string(Text), "** DLRN ansible build problem not reproduced for ~w ~w",
-                [Name, Branch]);
-     format(string(Text), "** DLRN ansible build problem reproduced for ~w ~w",
-            [Name, Branch])),
+         format(string(Text), "** DLRN ~w build problem not reproduced for ~w (~w/~w)",
+                [Name, Branch, WsUrl, RelPath]);
+     format(string(Text), "** DLRN ~w build problem reproduced for ~w (~w/~w)",
+            [Name, Branch, WsUrl, RelPath])),
     notify(Text, []).
 
+% not able to reproduce a build issue because of a download issue if
+% not already tried
+dlrn_solver(Gen) :-
+    get_fact(dlrn_problem(Name, Branch, RelPath)),
+    not(get_old_fact(dlrn_reproduced(Name, Branch, RelPath, _))),
+    config(dlrn_status_url, [Name, Branch, _]),
+    store_fact(Gen, dlrn_reproduced(Name, Branch, RelPath, error_download)),
+    url_workspace("dlrn", WsUrl),
+    format(string(Text), "** DLRN ~w build problem not reproduced for ~w (download issue: ~w/~w)",
+           [Name, Branch, WsUrl, RelPath]),
+    notify(Text, []).
+    
 :- add_fact_solver(dlrn:dlrn_solver).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
