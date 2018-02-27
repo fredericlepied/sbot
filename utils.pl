@@ -2,7 +2,7 @@
 
 :- module(utils,
           [cmd/2, cmd/3, cmd/4, string_join/3, dirbase/3, workspace/2, url_workspace/2, get_config/3,
-           load_external_modules/0
+           load_external_modules/0, sublist/2
           ]).
 
 :- use_module(config).
@@ -106,5 +106,9 @@ export_tools_path(RelPath) :-
     writeln(setenv("PATH", NewPaths)).
 
 export_tools_path(_).
+
+sublist([], _).
+
+sublist([X|XS], [X|XSS]) :- sublist(XS, XSS).
 
 %% utils.pl ends here

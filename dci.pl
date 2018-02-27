@@ -19,7 +19,7 @@ update_dci_facts(Gen) :-
     member(Component, Jobs.globalStatus),
     store_fact(Gen, dci_component(Component.product_name, Component.topic_name, Component.name)),
     member(Job, Component.jobs),
-    store_fact(Gen, dci_job(Component.product_name, Component.topic_name, Component.name, Job.team_name, Job.remoteci_name, Job.status, Job.id)).
+    store_fact(Gen, dci_job(Component.product_name, Component.topic_name, Component.name, Job.team_name, Job.remoteci_name, Job.status, Job.id, Job.rconfiguration_name)).
 
 :- add_fact_updater(dci:update_dci_facts).
 
@@ -39,6 +39,18 @@ deduce_dci_facts(Gen) :-
     not(get_old_fact(dci_component(Product, Topic, _))),
     store_fact(Gen, new_dci_component(Product, Topic, NewComponent)).
 
+deduce_dci_facts(Gen) :-
+    get_fact(dci_job(Product, Topic, Component, Team, RemoteCI, JobStatus, JobId, RConf)),
+    get_old_fact(dci_job(Product, Topic, Component, Team, RemoteCI, _, OldJobId, RConf)),
+    JobId \== OldJobId,
+    store_fact(Gen, new_dci_job(Product, Topic, Component, Team, RemoteCI, JobStatus, JobId, RConf)).
+
+deduce_dci_facts(Gen) :-
+    Gen \== 1,
+    get_fact(dci_job(Product, Topic, Component, Team, RemoteCI, JobStatus, JobId, RConf)),
+    not(get_old_fact(dci_job(Product, Topic, Component, Team, RemoteCI, _, _, RConf))),
+    store_fact(Gen, new_dci_job(Product, Topic, Component, Team, RemoteCI, JobStatus, JobId, RConf)).
+
 :- add_fact_deducer(dci:deduce_dci_facts).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -48,20 +60,30 @@ deduce_dci_facts(Gen) :-
 dci_solver(_) :-
     get_fact(new_dci_component(Product, Topic, NewComponent, OldComponent)),
     format(string(Text), "** [~w][~w] new component uploaded ~w (old was ~w)", [Product, Topic, NewComponent, OldComponent]),
-    notify(Text, []).
+    notification(["dci", Product, Topic, "new_component"], Text).
 
 dci_solver(_) :-
     get_fact(new_dci_component(Product, Topic, NewComponent)),
     format(string(Text), "** [~w][~w] new component uploaded ~w (first one)", [Product, Topic, NewComponent]),
-    notify(Text, []).
+    notification(["dci", Product, Topic, "new_component_uploaded"], Text).
 
 dci_solver(_) :-
-    get_fact(dci_component(_, Topic, NewComponent)),
+    get_fact(dci_component(Product, Topic, NewComponent)),
     get_fact(puddle_info(Topic, _, "latest", Puddle)),
     split_string(NewComponent, " ", "", [_, ComponentPuddle]),
     ComponentPuddle \== Puddle,
     format(string(Text), "** DCI out of sync for ~w. DCI version: ~w | Puddle available: ~w", [Topic, ComponentPuddle, Puddle]),
-    notify(Text, []).
+    notification(["dci", Product, Topic, "out_of_sync"], Text).
+
+dci_solver(_) :-
+    get_fact(new_dci_job(Product, Topic, Component, Team, RemoteCI, JobStatus, JobId, RConf)),
+    format(string(Text), "** [~w][~w][~w] new job ~w from ~w/~w/~w: ",
+           [Product, Topic, Component, JobId, Team, RemoteCI, RConf]),
+    colored(JobStatus, Colored),
+    notification(["dci", Product, Topic, "new_job"], [Text, Colored]).
+
+colored("success", green("success")).
+colored("failure", red("failure")).
 
 :- add_fact_solver(dci:dci_solver).
 

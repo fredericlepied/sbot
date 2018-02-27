@@ -1,13 +1,27 @@
 %% -*- prolog -*-
 
-:- module(discuss, [process_message/5, add_answerer/1, notify/2]).
+:- module(discuss, [process_message/5, add_answerer/1, notify/2, notification/2]).
 
 :- use_module(library(irc_client_utilities)).
 :- use_module(library(irc_client_parser)).
 :- use_module(config).
 :- use_module(utils).
+:- use_module(world).
 
 :- dynamic answerer/1.
+
+notification(List, Text) :-
+    writeln(notification(List, Text)),
+    get_longterm_fact(subscription(Sub, Context)),
+    sublist(Sub, List),
+    notify(Text, Context).
+
+% [irc, "nick", "chan"] -> [irc, "chan"]
+% [irc, "chan"] -> [irc, "chan"]
+% [] -> []
+extended_context([A, _, C], [A, C]).
+extended_context([A, B], [A, B]).
+extended_context([], []).
 
 process_message(Id, Server, "PRIVMSG", Params, Text) :-
     split_string(Text, " ", "@:.,!", S),
@@ -55,6 +69,36 @@ answer(TextList, Context, PrefixedAnswer) :-
     add_prefix(Context, Answer, PrefixedAnswer),
     !.
 
+% subscribe dlrn ansible
+answer(["subscribe", Elt|List], Context, PrefixedAnswer) :-
+    extended_context(Context, ExtendedContext),
+    store_longterm_fact(subscription([Elt|List], ExtendedContext)),
+    string_join(" ", [Elt|List], Text),
+    format(string(Answer), "subscribed to ~w", [Text]),
+    add_prefix(Context, Answer, PrefixedAnswer),
+    !.
+
+% unsubscribe dlrn ansible
+answer(["unsubscribe"|List], Context, PrefixedAnswer) :-
+    extended_context(Context, ExtendedContext),
+    remove_longterm_fact(subscription(List, ExtendedContext)),
+    string_join(" ", List, Text),
+    format(string(Answer), "unsubscribed from ~w", [Text]),
+    add_prefix(Context, Answer, PrefixedAnswer),
+    !.
+
+% subscriptions
+answer(["subscriptions"], Context, PrefixedAnswer) :-
+    extended_context(Context, ExtendedContext),
+    findall(Elt,
+            (get_longterm_fact(subscription(Sub, ExtendedContext)),
+             string_join(" ", Sub, Elt)),
+            List),
+    string_join("\n", List, Text),
+    format(string(Answer), "subscribed to ~w", [Text]),
+    add_prefix(Context, Answer, PrefixedAnswer),
+    !.
+
 answer(List, [_,Nick|_], Answer) :-
     member(Elt, List),
     string_upper(Elt, UpperElt),
@@ -74,7 +118,7 @@ answer([Help], Context, Answer) :-
     delete(List, irc, Removed),
     delete(Removed, autoupdate, Removed2),
     string_join(", ", Removed2, Output),
-    format(string(Text), "use <module> help. Available modules: ~w", [Output]),
+    format(string(Text), "use <module> help. Available modules: ~w.\nsubscribe <topic>\nunsubscribe <topic>\nsubscriptions", [Output]),
     add_prefix(Context, Text, Answer),
     !.
 

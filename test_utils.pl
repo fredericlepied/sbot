@@ -19,6 +19,12 @@ test(cmd_fail) :-
 test(cmd_true) :-
     utils:cmd("true", [], []).
 
+test(sublist_empty) :-
+    utils:sublist([], []).
+
+test(sublist_simple) :-
+    utils:sublist(["a", "b"], ["a", "b", "c"]).
+
 :- end_tests(test_utils).
 
 %% test_utils.pl ends here

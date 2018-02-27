@@ -46,12 +46,12 @@ deduce_puddle_facts(Gen) :-
 puddle_solver(_) :-
     get_fact(new_puddle(ProdVer, _, Type, New, Old)),
     format(string(Text), "** new puddle ~w for ~w ~w (old was ~w)", [New, ProdVer, Type, Old]),
-    notify(Text, []).
+    notification(["puddle", ProdVer, "new"], Text).
 
 puddle_solver(_) :-
     get_fact(new_puddle(ProdVer, _, Type, New)),
     format(string(Text), "** new puddle ~w for ~w ~w (first one)", [New, ProdVer, Type]),
-    notify(Text, []).
+    notification(["puddle", ProdVer, "new"], Text).
 
 :- add_fact_solver(puddle:puddle_solver).
 

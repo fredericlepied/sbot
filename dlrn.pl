@@ -145,7 +145,7 @@ dlrn_solver(Gen) :-
                 [Name, Branch, WsUrl, RelPath]);
      format(string(Text), "** DLRN ~w build problem reproduced for ~w (~w/~w)",
             [Name, Branch, WsUrl, RelPath])),
-    notify(Text, []).
+    notification(["dlrn", Name, Branch, "updated_pkg"], Text).
 
 % not able to reproduce a build issue because of a download issue if
 % not already tried
@@ -157,7 +157,7 @@ dlrn_solver(Gen) :-
     url_workspace("dlrn", WsUrl),
     format(string(Text), "** DLRN ~w build problem not reproduced for ~w (download issue: ~w/~w)",
            [Name, Branch, WsUrl, RelPath]),
-    notify(Text, []).
+    notification(["dlrn", Name, Branch, "remove_pr"], Text).
     
 :- add_fact_solver(dlrn:dlrn_solver).
 
@@ -243,8 +243,7 @@ dlrn_answer(List, _, Answer) :-
     format(string(Answer), "~w ~w ~w", [Name, Branch, Status]).
 
 % dlrn
-dlrn_answer(List, _, Answer) :-
-    member("dlrn", List),
+dlrn_answer(["dlrn"], _, Answer) :-
     findall(Str, dlrn_answer(Str), Res),
     string_join(', ', Res, Answer).
 
