@@ -9,11 +9,8 @@
           - git
           - pl
           - mock
-          - fortune-mod
           - tmux
           - libselinux-python
-          - fedpkg
-          - spectool
 
       - include_role:
           name: httpd

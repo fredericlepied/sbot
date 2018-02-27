@@ -6,7 +6,10 @@
 
 :- use_module(library(http/http_open)).
 :- use_module(discuss).
+:- use_module(req).
 :- use_module(utils).
+
+:- pkg_or_abort("fortune-mod").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% communication predicates

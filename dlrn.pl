@@ -13,7 +13,12 @@
 :- use_module(discuss).
 :- use_module(github).
 :- use_module(utils).
+:- use_module(req).
 :- use_module(world).
+
+:- pkg_or_abort("mock").
+:- pkg_or_abort("rpm-build").
+:- pkg_or_abort("wget").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% fact updater

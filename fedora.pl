@@ -5,7 +5,12 @@
 :- use_module(config).
 :- use_module(discuss).
 :- use_module(utils).
+:- use_module(req).
 :- use_module(world).
+
+:- pkg_or_abort("fedpkg").
+:- pkg_or_abort("rpmdevtools").
+:- pkg_or_abort("sed").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% fact deducer
