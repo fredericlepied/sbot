@@ -26,6 +26,14 @@
           path: /home/botsito
           mode: '0701'
 
+      - name: botsito sudoers file
+        lineinfile:
+          path: /etc/sudoers.d/botsito
+          create: yes
+          regexp: '^%botsito\s'
+          line: '%botsito ALL=(ALL) NOPASSWD: /bin/dnf'
+          mode: '0440'
+
       become: True
 
     - block:
@@ -39,7 +47,6 @@
           path: ~/.ssh
           state: directory
         when: botsito_path_to_privatekey is defined and botsito_path_to_publickey is defined
-
       - name: Copy keys
         copy:
           src: '{{ item.src }}'
@@ -66,13 +73,7 @@
       - name: Retrieve botsito configuration
         git:
           repo: '{{ botsito_config_url }}'
-          dest: ~/botsito-config
-
-      - name: Link botsito config.pl into proper dir
-        file:
-          src: ~/botsito-config/config.pl
-          dest: ~/botsito/config.pl
-          state: link
+          dest: ~/botsito/modules/botsito-config
 
       - name: Start botsito
         shell: tmux new-session -s botsito -d && tmux send -t botsito 'cd ~/botsito && ./bot.sh' ENTER
