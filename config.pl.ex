@@ -17,7 +17,7 @@ config(irc_channels, ["##testbot"]).
 %config(external_git_module, "file:///home/sbot/repo/sbot-config").
 
 %% add the optional modules you want to activate to the list
-config(modules, [dlrn, irc, self, autoupdate, github, puddle, fun, fedora, admin, dci]).
+config(modules, [dlrn, irc, self, autoupdate, github, puddle, fun, fedora, admin, dci, gerrit]).
 
 %% admin-team members
 config(admins, ["admin-1", "admin-2"]).
@@ -44,5 +44,9 @@ config(gitrepo, ["systemd-distgit", "git://pkgs.fedoraproject.org/rpms/systemd"]
 %% dci settings
 % config(dci_login, "login").
 % config(dci_password, "password").
+
+%% gerrit settings
+% config(gerrit_access, ["user", "softwarefactory-project.io", 29418]).
+% config(gerrit_projects, ["my-project", "my-other-project"]).
 
 %% config.pl ends here
