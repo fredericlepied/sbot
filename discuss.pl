@@ -102,7 +102,7 @@ answer(["subscriptions"], Context, PrefixedAnswer) :-
 answer(List, [_,Nick|_], Answer) :-
     member(Elt, List),
     string_upper(Elt, UpperElt),
-    member(UpperElt, ["HI", "HELLO", "SALUT", "BONJOUR", "HOLA", "HEY"]),
+    member(UpperElt, ["HI", "HELLO", "SALUT", "BONJOUR", "HOLA", "HEY", "MORNING"]),
     format(string(Answer), "~w ~w", [Elt, Nick]),
     !.
 
