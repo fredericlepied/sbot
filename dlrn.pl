@@ -153,11 +153,12 @@ dlrn_solver(Gen) :-
     get_fact(dlrn_problem(Name, Branch, RelPath)),
     not(get_old_fact(dlrn_reproduced(Name, Branch, RelPath, _))),
     config(dlrn_status_url, [Name, Branch, _]),
-    store_fact(Gen, dlrn_reproduced(Name, Branch, RelPath, error_download)),
+    get_download_error(Name, Branch, RelPath, Issue),
+    store_fact(Gen, dlrn_reproduced(Name, Branch, RelPath, download_error)),
     url_workspace("dlrn", WsUrl),
-    format(string(Text), "** DLRN ~w build problem not reproduced for ~w (download issue: ~w/~w)",
-           [Name, Branch, WsUrl, RelPath]),
-    notification(["dlrn", Name, Branch, "remove_pr"], Text).
+    format(string(Text), "** DLRN ~w build problem not reproduced for ~w (~w: ~w/~w)",
+           [Name, Branch, Issue, WsUrl, RelPath]),
+    notification(["dlrn", Name, Branch, "reproduce"], Text).
     
 :- add_fact_solver(dlrn:dlrn_solver).
 
@@ -316,5 +317,15 @@ remove_patch(Name, Branch, Pr) :-
     distgit_workspace(Name, Dir),
     string_concat("rpm-", Branch, DistGitBranch),
     cmd("dlrn_unpublish_patch.sh ~w pr-~w.patch ~w", [Dir, Pr, DistGitBranch]).
+
+get_download_error(_, _, RelPath, "invalid or expired") :-
+    workspace("dlrn", Ws),
+    format(string(Filename), "~w/~w/copr.log", [Ws, RelPath]),
+    read_file_to_string(Filename, String, []),
+    split_string(String, " \n", "", List),
+    member("invalid/expired.", List),
+    !.
+
+get_download_error(_, _, _, "download error").
 
 %% dlrn.pl ends here

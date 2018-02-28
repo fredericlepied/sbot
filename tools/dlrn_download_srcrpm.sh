@@ -10,7 +10,7 @@ set -x
 
 mkdir -p $WSP/$DIR
 cd $WSP/$DIR
-wget -q -r -np -nd -L -A '*.src.rpm' -A '*.cfg' $URL$DIR/
+wget -q -r -np -nd -L -A '*.src.rpm' -A '*.cfg' -A 'copr.log' $URL$DIR/
 rm -f child.cfg site-defaults.cfg
 ls *.cfg
 ls *.src.rpm
