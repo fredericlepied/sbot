@@ -208,6 +208,9 @@ encode_irc(grey(Text), Encoded) :-
 encode_irc(light_grey(Text), Encoded) :-
     irc_color("15", Text, Encoded).
 
+encode_irc(bold(Text), Encoded) :-
+    irc_color("02", Text, Encoded).
+
 encode_irc(Text, Text).
 
 irc_color(Color, Text, Encoded) :-

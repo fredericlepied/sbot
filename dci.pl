@@ -107,10 +107,16 @@ get_dci_jobs(Status) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % dci help
-dci_answer(List, _, Answer) :-
-    member("dci", List),
-    member("help", List),
-    format(string(Answer), "~n~w~n~w", ["dci products: display the list of available products.", "dci components <Product>: display the list of latest components for a product."]).
+dci_answer(["dci", "help"], _,
+           ["Available commands:\n",
+            bold("dci products"), ": display the list of available products.\n",
+            bold("dci components <product>"), ": display the list of latest components for a product.\n",
+            "Available notifications\n",
+            bold("dci <product> <topic> new_component\n"),
+            bold("dci <product> <topic> new_component\n"),
+            bold("dci <product> <topic> out_of_sync\n"),
+            bold("dci <product> <topic> new_job")
+           ]).
 
 % dci products
 dci_answer(["dci", "products"], _, Answer) :-

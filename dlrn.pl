@@ -145,7 +145,7 @@ dlrn_solver(Gen) :-
                 [Name, Branch, WsUrl, RelPath]);
      format(string(Text), "** DLRN ~w build problem reproduced for ~w (~w/~w)",
             [Name, Branch, WsUrl, RelPath])),
-    notification(["dlrn", Name, Branch, "updated_pkg"], Text).
+    notification(["dlrn", Name, Branch, "reproduce"], Text).
 
 % not able to reproduce a build issue because of a download issue if
 % not already tried
@@ -220,7 +220,15 @@ basename(Name, Base) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % dlrn help
-dlrn_answer(List, _, "dlrn: display the status of all the DLRN instances.\ndlrn <package>: display DLRN status for this package.\ndlrn apply pr <pr> to <package> <branch>.\ndlrn remove pr <pr> from <package> <branch>.") :-
+dlrn_answer(List, _,
+            ["Available commands:\n",
+             bold("dlrn"), ": display the status of all the DLRN instances.\n",
+             bold("dlrn <package>"), ": display DLRN status for this package.\n",
+             bold("dlrn apply pr <pr> to <package> <branch>"), ".\n",
+             bold("dlrn remove pr <pr> from <package> <branch>"), ".\n",
+             "Available notification:\n",
+             bold("dlrn <package> <branch> reproduce")
+            ]) :-
     member("dlrn", List),
     member("help", List).
 
