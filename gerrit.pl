@@ -150,4 +150,67 @@ compute_reviews_answer(Project, Texts, Answer) :-
 
 :- add_answerer(gerrit:gerrit_answer).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% thread to read events from gerrit
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+gerrit_run :-
+    is_thread(gerrit_cmd),
+    !.
+
+gerrit_run :-
+    config(gerrit_access, [User, Server, Port]),
+    !,
+    thread_create(gerrit_loop(User, Server, Port), _, [detached(true), alias(gerrit_cmd)]).
+
+gerrit_run :-
+    not(config(gerrit_access, [_, _, _])).
+
+gerrit_loop(User, Server, Port) :-
+    repeat,
+    catch(
+        thread_create(process_gerrit_stream(User, Server, Port), _, [alias(gerrit)]),
+	Err,
+	print_message(error, Err)
+    ),
+    thread_join(gerrit, _),
+    writeln("Gerrit stream lost, attempting to reconnect ..."),
+    sleep(30),
+    fail.
+
+process_gerrit_stream(User, Server, Port) :-
+    format(string(Cmd), "ssh -p ~w ~w@~w gerrit stream-events < /dev/null", [Port, User, Server]),
+    %format(string(Cmd), "cat /var/tmp/stream.json", [Port, User, Server]),
+    open(pipe(Cmd), read, Stream),
+    get_gerrit_event(Stream).
+
+get_gerrit_event(Stream) :-
+    at_end_of_stream(Stream),
+    close(Stream),
+    !.
+
+get_gerrit_event(Stream) :-
+    json_read_dict(Stream, Dict),
+    store_gerrit_fact(Dict),
+    !,
+    get_gerrit_event(Stream).
+
+% do not store these events
+store_gerrit_fact(D) :-
+    member(D.type, ["ref-replicated", "ref-replication-done", "ref-updated"]).
+
+% store an event with the change attribute according to
+% https://gerrit-review.googlesource.com/Documentation/cmd-stream-events.html
+store_gerrit_fact(D) :-
+    member(D.type, ["assignee-changed", "change-abandoned", "change-merged", "change-restored", "comment-added", "hashtags-changed", "patchset-created", "reviewer-added", "reviewer-deleted", "topic-changed", "wip-state-changed", "private-state-changed", "vote-deleted"]),
+    atom_string(Atom, D.type),
+    store_nextgen_fact(gerrit_event(Atom, D.change.project, D.change.number, D)).
+
+% event without a change attribute
+store_gerrit_fact(D) :-
+    atom_string(Atom, D.type),
+    store_nextgen_fact(gerrit_event(Atom, D)).
+
+:- gerrit_run.
+
 %% gerrit.pl ends here
