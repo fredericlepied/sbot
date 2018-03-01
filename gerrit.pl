@@ -27,8 +27,12 @@ update_gerrit_facts(Gen) :-
             _).
 
 update_gerrit_facts(Gen) :-
-    not(get_fact(init_gen(gerrit, _))),
-    store_fact(init_gen(gerrit, Gen)).
+    not(get_old_fact(init_gen(gerrit, _))),
+    store_fact(Gen, init_gen(gerrit, Gen)).
+
+update_gerrit_facts(Gen) :-
+    get_old_fact(init_gen(gerrit, OldGen)),
+    store_fact(Gen, init_gen(gerrit, OldGen)).
 
 :- add_fact_updater(gerrit:update_gerrit_facts).
 
@@ -40,8 +44,11 @@ deduce_gerrit_facts(Gen) :-
     get_fact(gerrit_open_review(Project, Number, Owner, Subject, LastUpdated)),
     get_old_fact(gerrit_open_review(Project, Number, Owner, _, OldLastUpdated)),
     LastUpdated \== OldLastUpdated,
-    store_fact(Gen, gerrit_review_updated(Project, Number, Owner, Subject, LastUpdated, OldLastUpdated)),
-    format(string(Text), "** review ~w from ~w updated on ~w: ~w", [Number, Owner, Project, Subject]),
+    store_fact(Gen, gerrit_review_updated(Project, Number, Owner, Subject,
+                                          LastUpdated, OldLastUpdated)),
+    gerrit_url(Number, Url),
+    format(string(Text), "** review ~w from ~w updated on ~w: ~w (~w)",
+           [Number, Owner, Project, Subject, Url]),
     notification(["gerrit", Project, "updated"], Text).
 
 deduce_gerrit_facts(Gen) :-
@@ -50,8 +57,19 @@ deduce_gerrit_facts(Gen) :-
     get_fact(gerrit_open_review(Project, Number, Owner, Subject, LastUpdated)),
     not(get_old_fact(gerrit_open_review(Project, Number, Owner, _, _))),
     store_fact(Gen, gerrit_review_updated(Project, Number, Owner, Subject, LastUpdated)),
-    format(string(Text), "** new review ~w from ~w on ~w: ~w", [Number, Owner, Project, Subject]),
+    gerrit_url(Number, Url),
+    format(string(Text), "** new review ~w from ~w on ~w: ~w (~w)",
+           [Number, Owner, Project, Subject, Url]),
     notification(["gerrit", Project, "new"], Text).
+
+deduce_gerrit_facts(Gen) :-
+    get_old_fact(gerrit_open_review(Project, Number, Owner, Subject, _)),
+    not(get_fact(gerrit_open_review(Project, Number, Owner, _, _))),
+    store_fact(Gen, gerrit_review_merged(Project, Number, Owner, Subject)),
+    gerrit_url(Number, Url),
+    format(string(Text), "** review ~w from ~w merged on ~w: ~w (~w)",
+           [Number, Owner, Project, Subject, Url]),
+    notification(["gerrit", Project, "merged"], Text).
 
 :- add_fact_deducer(gerrit:deduce_gerrit_facts).
 
@@ -94,9 +112,14 @@ gerrit_url(Number, Url) :-
 %% communication predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-gerrit_answer(["gerrit", "help"], _, [bold("gerrit version"), ": return gerrit version\n",
-                                      bold("gerrit projects"), ": list projects with open reviews",
-                                      bold("gerrit reviews <project>"), ": display open reviews for <project>"
+gerrit_answer(["gerrit", "help"], _, ["Available commands:\n",
+                                      bold("gerrit version"), ": return gerrit version\n",
+                                      bold("gerrit projects"), ": list projects with open reviews\n",
+                                      bold("gerrit reviews <project>"), ": display open reviews for <project>\n",
+                                      "Available notifications:\n",
+                                      bold("gerrit <project> new"), "\n",
+                                      bold("gerrit <project> updated"), "\n",
+                                      bold("gerrit <project> merged")
                                      ]).
 
 gerrit_answer(["gerrit", "version"], _, Answer) :-
@@ -115,12 +138,12 @@ gerrit_answer(["gerrit", "reviews", Project], _, Answer) :-
                    gerrit_url(Number, Url),
                    format(string(Text), "- ~w from ~w: ~w (~w)", [Number, Owner, Subject, Url])),
             Texts),
-    compute_answer(Project, Texts, Answer).
+    compute_reviews_answer(Project, Texts, Answer).
 
-compute_answer(Project, [], Answer) :-
+compute_reviews_answer(Project, [], Answer) :-
     format(string(Answer), "No open reviews for ~w", [Project]).
 
-compute_answer(Project, Texts, Answer) :-
+compute_reviews_answer(Project, Texts, Answer) :-
     string_join("\n", Texts, Joined),
     length(Texts, Len),
     format(string(Answer), "~w open reviews for ~w:\n~w", [Len, Project, Joined]).
