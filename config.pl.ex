@@ -45,8 +45,13 @@ config(gitrepo, ["systemd-distgit", "git://pkgs.fedoraproject.org/rpms/systemd"]
 % config(dci_login, "login").
 % config(dci_password, "password").
 
-%% gerrit settings
+%% gerrit account and server
 % config(gerrit_access, ["user", "softwarefactory-project.io", 29418]).
-% config(gerrit_projects, ["my-project", "my-other-project"]).
+
+%% user is capable of using the event stream 
+% config(gerrit_stream, yes).
+
+%% list of projects to follow (can be regexp)
+% config(gerrit_projects, ["my-project-.*", "other-project"]).
 
 %% config.pl ends here

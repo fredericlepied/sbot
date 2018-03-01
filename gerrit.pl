@@ -15,17 +15,15 @@
 
 update_gerrit_facts(Gen) :-
     config(gerrit_projects, Projects),
-    findall(Project,
-            (member(Project, Projects),
-             format(string(Query), "status:open project:~w", Project),
-             gerrit_query(Query, Dicts),
-             findall(D,
-                     (member(D, Dicts),
-                      store_fact(Gen, gerrit_open_review(Project, D.number, D.owner.name,
-                                                         D.subject, D.lastUpdated))),
-                     _)),
+    string_join("|", Projects, Regexp),
+    format(string(Query), "status:open 'project:^~w'", Regexp),
+    gerrit_query(Query, Dicts),
+    findall(D, (member(D, Dicts),
+                store_fact(Gen, gerrit_open_review(D.project, D.number, D.owner.name,
+                                                   D.subject, D.lastUpdated))),
             _).
 
+% tricks to store the first gen number
 update_gerrit_facts(Gen) :-
     not(get_old_fact(init_gen(gerrit, _))),
     store_fact(Gen, init_gen(gerrit, Gen)).
@@ -40,7 +38,12 @@ update_gerrit_facts(Gen) :-
 %% fact deducer
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+use_stream :-
+    config(gerrit_stream, yes).
+
+% update on a review deduced from polling
 deduce_gerrit_facts(Gen) :-
+    not(use_stream),
     get_fact(gerrit_open_review(Project, Number, Owner, Subject, LastUpdated)),
     get_old_fact(gerrit_open_review(Project, Number, Owner, _, OldLastUpdated)),
     LastUpdated \== OldLastUpdated,
@@ -51,7 +54,9 @@ deduce_gerrit_facts(Gen) :-
            [Number, Owner, Project, Subject, Url]),
     notification(["gerrit", Project, "updated"], Text).
 
+% new review deduced from polling
 deduce_gerrit_facts(Gen) :-
+    not(use_stream),
     get_fact(init_gen(gerrit, InitGen)),
     Gen \== InitGen,
     get_fact(gerrit_open_review(Project, Number, Owner, Subject, LastUpdated)),
@@ -62,7 +67,9 @@ deduce_gerrit_facts(Gen) :-
            [Number, Owner, Project, Subject, Url]),
     notification(["gerrit", Project, "new"], Text).
 
+% merged of a review deduced from polling
 deduce_gerrit_facts(Gen) :-
+    not(use_stream),
     get_old_fact(gerrit_open_review(Project, Number, Owner, Subject, _)),
     not(get_fact(gerrit_open_review(Project, Number, Owner, _, _))),
     store_fact(Gen, gerrit_review_merged(Project, Number, Owner, Subject)),
@@ -70,6 +77,31 @@ deduce_gerrit_facts(Gen) :-
     format(string(Text), "** review ~w from ~w merged on ~w: ~w (~w)",
            [Number, Owner, Project, Subject, Url]),
     notification(["gerrit", Project, "merged"], Text).
+
+% deduced from the event stream
+
+deduce_gerrit_facts(Gen) :-
+    deduce_gerrit_facts_from_event(Gen, 'patchset-created', "patchset updated", "patchset-updated").
+
+deduce_gerrit_facts(Gen) :-
+    deduce_gerrit_facts_from_event(Gen, 'comment-added', "comment added", "comment-added").
+
+deduce_gerrit_facts(Gen) :-
+    deduce_gerrit_facts_from_event(Gen, 'change-merged', "change merged", "changed-merged").
+
+deduce_gerrit_facts(Gen) :-
+    deduce_gerrit_facts_from_event(Gen, 'change-abandoned', "change abandoned", "changed-abandoned").
+
+deduce_gerrit_facts_from_event(Gen, Type, Explain, NotifType) :-
+    get_fact(gerrit_event(Type, Project, Number, D)),
+    config(gerrit_projects, Projects),
+    member(Project, Projects),
+    store_fact(Gen, gerrit_review_changed(Type, Project, Number, D.change.owner.name,
+                                          D.change.subject, D.'eventCreatedOn')),
+    gerrit_url(Number, Url),
+    format(string(Text), "** review ~w from ~w ~w to ~w: ~w (~w)",
+           [Number, D.change.owner.name, Explain, Project, D.change.subject, Url]),
+    notification(["gerrit", Project, NotifType], Text).
 
 :- add_fact_deducer(gerrit:deduce_gerrit_facts).
 
@@ -119,6 +151,10 @@ gerrit_answer(["gerrit", "help"], _, ["Available commands:\n",
                                       "Available notifications:\n",
                                       bold("gerrit <project> new"), "\n",
                                       bold("gerrit <project> updated"), "\n",
+                                      bold("gerrit <project> patchset-updated"), "\n",
+                                      bold("gerrit <project> comment-added"), "\n",
+                                      bold("gerrit <project> change-merged"), "\n",
+                                      bold("gerrit <project> change-abandoned"), "\n",
                                       bold("gerrit <project> merged")
                                      ]).
 
@@ -154,15 +190,23 @@ compute_reviews_answer(Project, Texts, Answer) :-
 %% thread to read events from gerrit
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% not configured to use event stream
+gerrit_run :-
+    not(use_stream),
+    !.
+
+% already running
 gerrit_run :-
     is_thread(gerrit_cmd),
     !.
 
+% real launch if settings exist
 gerrit_run :-
     config(gerrit_access, [User, Server, Port]),
     !,
     thread_create(gerrit_loop(User, Server, Port), _, [detached(true), alias(gerrit_cmd)]).
 
+% no settings
 gerrit_run :-
     not(config(gerrit_access, [_, _, _])).
 
