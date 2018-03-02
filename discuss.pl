@@ -118,8 +118,12 @@ answer([Help], Context, Answer) :-
     delete(List, irc, Removed),
     delete(Removed, autoupdate, Removed2),
     string_join(", ", Removed2, Output),
-    format(string(Text), "use <module> help. Available modules: ~w.\nsubscribe <topic>\nunsubscribe <topic>\nsubscriptions", [Output]),
-    add_prefix(Context, Text, Answer),
+    add_prefix(Context,
+               ["use ", bold("<module> help"),
+                ". Available modules: ", bold(Output), ".\n",
+                bold("subscribe <topic> [<subtopic or *>...]\n"),
+                bold("unsubscribe <topic> [<subtopic or *>...]\n"),
+                bold("subscriptions")], Answer),
     !.
 
 answer(_, Context, Answer) :-
