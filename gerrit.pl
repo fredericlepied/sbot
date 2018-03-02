@@ -87,10 +87,10 @@ deduce_gerrit_facts(Gen) :-
     deduce_gerrit_facts_from_event(Gen, 'comment-added', "comment added", "comment-added", yes).
 
 deduce_gerrit_facts(Gen) :-
-    deduce_gerrit_facts_from_event(Gen, 'change-merged', "change merged", "changed-merged", yes).
+    deduce_gerrit_facts_from_event(Gen, 'change-merged', "change merged", "changed-merged", no).
 
 deduce_gerrit_facts(Gen) :-
-    deduce_gerrit_facts_from_event(Gen, 'change-abandoned', "change abandoned", "changed-abandoned", yes).
+    deduce_gerrit_facts_from_event(Gen, 'change-abandoned', "change abandoned", "changed-abandoned", no).
 
 deduce_gerrit_facts_from_event(Gen, Type, Explain, NotifType, FilterUsers) :-
     get_fact(gerrit_event(Type, Project, Number, D)),
