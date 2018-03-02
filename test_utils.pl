@@ -25,6 +25,9 @@ test(sublist_empty) :-
 test(sublist_simple) :-
     utils:sublist(["a", "b"], ["a", "b", "c"]).
 
+test(sublist_star) :-
+    utils:sublist(["a", "*", "c"], ["a", "b", "c"]).
+
 :- end_tests(test_utils).
 
 %% test_utils.pl ends here

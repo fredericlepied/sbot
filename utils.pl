@@ -108,7 +108,7 @@ export_tools_path(RelPath) :-
 export_tools_path(_).
 
 sublist([], _).
-
-sublist([X|XS], [X|XSS]) :- sublist(XS, XSS).
+sublist([X|XS], [X|XSS]) :- sublist(XS, XSS), !.
+sublist(["*"|XS], [_|XSS]) :- sublist(XS, XSS).
 
 %% utils.pl ends here
