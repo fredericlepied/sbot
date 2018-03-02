@@ -81,26 +81,31 @@ deduce_gerrit_facts(Gen) :-
 % deduced from the event stream
 
 deduce_gerrit_facts(Gen) :-
-    deduce_gerrit_facts_from_event(Gen, 'patchset-created', "patchset updated", "patchset-updated").
+    deduce_gerrit_facts_from_event(Gen, 'patchset-created', "patchset updated", "patchset-updated", no).
 
 deduce_gerrit_facts(Gen) :-
-    deduce_gerrit_facts_from_event(Gen, 'comment-added', "comment added", "comment-added").
+    deduce_gerrit_facts_from_event(Gen, 'comment-added', "comment added", "comment-added", yes).
 
 deduce_gerrit_facts(Gen) :-
-    deduce_gerrit_facts_from_event(Gen, 'change-merged', "change merged", "changed-merged").
+    deduce_gerrit_facts_from_event(Gen, 'change-merged', "change merged", "changed-merged", yes).
 
 deduce_gerrit_facts(Gen) :-
-    deduce_gerrit_facts_from_event(Gen, 'change-abandoned', "change abandoned", "changed-abandoned").
+    deduce_gerrit_facts_from_event(Gen, 'change-abandoned', "change abandoned", "changed-abandoned", yes).
 
-deduce_gerrit_facts_from_event(Gen, Type, Explain, NotifType) :-
+deduce_gerrit_facts_from_event(Gen, Type, Explain, NotifType, FilterUsers) :-
     get_fact(gerrit_event(Type, Project, Number, D)),
     config(gerrit_projects, Projects),
     member(Project, Projects),
-    store_fact(Gen, gerrit_review_changed(Type, Project, Number, D.change.owner.name,
-                                          D.change.subject, D.'eventCreatedOn')),
+    get_config(gerrit_ignore_users, Users, []),
+    (FilterUsers == yes ->
+         (not(member(D.author.username, Users)),
+          store_fact(Gen, gerrit_review_changed(Type, Project, Number, D.author.name,
+                                                D.change.subject, D.'eventCreatedOn')),
+          Name = D.author.name);
+     Name = D.change.owner.name),
     gerrit_url(Number, Url),
     format(string(Text), "** review ~w from ~w ~w to ~w: ~w (~w)",
-           [Number, D.change.owner.name, Explain, Project, D.change.subject, Url]),
+           [Number, Name, Explain, Project, D.change.subject, Url]),
     notification(["gerrit", Project, NotifType], Text).
 
 :- add_fact_deducer(gerrit:deduce_gerrit_facts).
