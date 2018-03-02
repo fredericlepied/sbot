@@ -329,6 +329,7 @@ remove_patch(Name, Branch, Pr) :-
 get_download_error(_, _, RelPath, "invalid or expired") :-
     workspace("dlrn", Ws),
     format(string(Filename), "~w/~w/copr.log", [Ws, RelPath]),
+    exists_file(Filename),
     read_file_to_string(Filename, String, []),
     split_string(String, " \n", "", List),
     member("invalid/expired.", List),
