@@ -3,6 +3,7 @@
 :- module(trello, []).
 
 :- use_module(library(http/http_open)).
+:- use_module(library(http/http_client)).
 :- use_module(library(http/json)).
 
 :- use_module(world).
@@ -17,7 +18,8 @@
 update_trello_card_facts(Gen) :-
     get_trello_cards(Cards),
     member(Card, Cards),
-    store_fact(Gen, trello_card(Card.id, Card.name, Card.closed, Card.badges.comments, Card.actions, Card.shortUrl, Card.idList, Card.idBoard)).
+    get_fact(trello_list(Card.idList, ListName, _, _, BoardName)),
+    store_fact(Gen, trello_card(Card.id, Card.name, Card.closed, Card.badges.comments, Card.actions, Card.checklists, Card.shortUrl, Card.idList, ListName, Card.idBoard, BoardName)).
 
 update_trello_list_facts(Gen) :-
     get_trello_board(Board),
@@ -58,36 +60,33 @@ deduce_trello_facts(Gen) :-
 % cards: new card
 deduce_trello_facts(Gen) :-
     Gen \== 1,
-    get_fact(trello_card(Id, Name, false, _, _, ListId, _)),
-    get_fact(trello_list(ListId, ListName, _, _, BoardName)),
-    not(get_old_fact(trello_card(Id, _, false, _, _, _, _))),
+    get_fact(trello_card(Id, Name, false, _, _, _, _, _, ListName, _, BoardName)),
+    not(get_old_fact(trello_card(Id, _, false, _, _, _, _, _, _, _, _))),
     store_fact(Gen, new_trello_card(Id, Name, ListName, BoardName)).
 
 % cards: moved card
 deduce_trello_facts(Gen) :-
     Gen \== 1,
-    get_fact(trello_card(Id, Name, false, _, _, ListId, _)),
-    get_old_fact(trello_card(Id, _, false, _, _, OldListId, _)),
+    get_fact(trello_card(Id, Name, false, _, _, _, _, ListId, _, _, BoardName)),
+    get_old_fact(trello_card(Id, _, false, _, _, _, _, OldListId, _, _, _)),
     ListId \== OldListId,
     get_fact(trello_list(ListId, ListName, _, _, _)),
-    get_fact(trello_list(OldListId, OldListName, _, _, BoardName)),
+    get_fact(trello_list(OldListId, OldListName, _, _, _)),
     store_fact(Gen, moved_trello_card(Id, Name, ListName, OldListName, BoardName)).
 
 % cards: archived card
 deduce_trello_facts(Gen) :-
     Gen \== 1,
-    get_fact(trello_card(Id, Name, true, _, _, ListId, _)),
-    get_old_fact(trello_card(Id, _, false, _, _, _, _)),
-    get_fact(trello_list(ListId, ListName, _, _, BoardName)),
+    get_fact(trello_card(Id, Name, true, _, _, _, _, _, ListName, _, BoardName)),
+    get_old_fact(trello_card(Id, _, false, _, _, _, _, _, _, _, _)),
     store_fact(Gen, archived_trello_card(Id, Name, ListName, BoardName)).
 
 % cards: comment card
 deduce_trello_facts(Gen) :-
     Gen \== 1,
-    get_fact(trello_card(Id, Name, false, CommentNumber, [Comment|_], ShortUrl, ListId, _)),
-    get_old_fact(trello_card(Id, _, false, OldCommentNumber, _, _, _, _)),
+    get_fact(trello_card(Id, Name, false, CommentNumber, [Comment|_], _, ShortUrl, _, ListName, _, BoardName)),
+    get_old_fact(trello_card(Id, _, false, OldCommentNumber, _, _, _, _, _, _, _)),
     OldCommentNumber \== CommentNumber,
-    get_fact(trello_list(ListId, ListName, _, _, BoardName)),
     store_fact(Gen, comment_added_trello_card(Id, Name, Comment.memberCreator.fullName, ShortUrl, ListName, BoardName)).
 
 :- add_fact_deducer(trello:deduce_trello_facts).
@@ -118,7 +117,7 @@ trello_solver(_) :-
 
 trello_solver(_) :-
     get_fact(moved_trello_card(_, Name, ListName, OldListName, BoardName)),
-    format(string(Text), "** [~w] Card \"~w\" moved from \"~w\" to \"~w\"", [BoardName, Name, ListName, OldListName]),
+    format(string(Text), "** [~w] Card \"~w\" moved from \"~w\" to \"~w\"", [BoardName, Name, OldListName, ListName]),
     notification(["trello", BoardName, "moved_card"], Text).
 
 trello_solver(_) :-
@@ -130,6 +129,16 @@ trello_solver(_) :-
     get_fact(comment_added_trello_card(_, Name, Author, ShortUrl, _, BoardName)),
     format(string(Text), "** [~w] ~w made a comment on \"~w\" (~w)", [BoardName, Author, Name, ShortUrl]),
     notification(["trello", BoardName, "comment_added_card"], Text).
+
+trello_solver(_) :-
+    get_fact(github_closed_issue(_, _, _, GHIssueUrl, _, _, _)),
+    get_fact(trello_card(CardId, CardName, false, _, _, CardChecklists, CardUrl, _, _, _, BoardName)),
+    member(List, CardChecklists),
+    member(CheckItem, List.checkItems),
+    CheckItem.name == GHIssueUrl,
+    update_trello_checklist(CardId, CheckItem.id),
+    format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w)", [BoardName, GHIssueUrl, CardName, CardUrl]),
+    notification(["trello", BoardName, "checklist_marked_done_card"], Text).
 
 :- add_fact_solver(trello:trello_solver).
 
@@ -163,12 +172,19 @@ get_trello_cards(Cards) :-
     config(trello_api_secret, TrelloApiSecret),
     config(trello_oauth_token, TrelloOAuthToken),
     config(trello_board, TrelloBoard),
-    format(string(TrelloUrl), "https://api.trello.com/1/boards/~w/cards?actions=commentCard&filter=all&key=~w&token=~w", [TrelloBoard, TrelloApiSecret, TrelloOAuthToken]),
+    format(string(TrelloUrl), "https://api.trello.com/1/boards/~w/cards?actions=commentCard&checklists=all&filter=all&key=~w&token=~w", [TrelloBoard, TrelloApiSecret, TrelloOAuthToken]),
     setup_call_cleanup(
         http_open(TrelloUrl, In, []),
         json_read_dict(In, Cards),
         close(In)
     ).
+
+update_trello_checklist(CardId, CheckItemId) :-
+    config(trello_api_secret, TrelloApiSecret),
+    config(trello_oauth_token, TrelloOAuthToken),
+    format(string(TrelloUrl), "https://api.trello.com/1/cards/~w/checkItem/~w?key=~w&token=~w", [CardId, CheckItemId, TrelloApiSecret, TrelloOAuthToken]),
+    http_put(TrelloUrl, form([state = "complete"]), _, []).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Communication predicates
@@ -185,7 +201,8 @@ trello_answer(["trello", "help"], _,
             bold("trello <board> new_card\n"),
             bold("trello <board> moved_card\n"),
             bold("trello <board> archived_card\n"),
-            bold("trello <board> comment_added_card")
+            bold("trello <board> comment_added_card\n"),
+            bold("trello <board> checklist_marked_done_card")
            ]).
 
 % trello lists
