@@ -1,7 +1,7 @@
 %% -*- prolog -*-
 
 :- module(githublib,
-          [github_pr/4, github_prs/3
+          [github_pr/4, github_prs/3, github_issues/3
           ]).
 
 :- use_module(library(http/http_client)).
@@ -22,6 +22,10 @@ github_pr(Owner, Project, Pr, Dict) :-
 
 github_prs(Owner, Project, Dict) :-
     format(atom(Path), '/repos/~w/~w/pulls', [Owner, Project]),
+    github_json(Path, Dict).
+
+github_issues(Owner, Project, Dict) :-
+    format(atom(Path), '/repos/~w/~w/issues?state=all', [Owner, Project]),
     github_json(Path, Dict).
 
 %% githublib.pl ends here
