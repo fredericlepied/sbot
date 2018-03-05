@@ -32,13 +32,11 @@ process_message(Id, Server, "PRIVMSG", Params, Text) :-
     private_message(Id, CleanList, Nick).
 
 process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
-    split_string(Text, " ", "@:.,!", S),
+    split_string(Text, " ", "@:.,!", [BotName|S]),
     config(irc_nick, IrcNick),
-    member(IrcNick, S),
-    delete(S, IrcNick, CleanList1),
-    delete(CleanList1, "", CleanList),
+    IrcNick == BotName,
     prefix_id(Server, Nick, _, _),
-    public_message(Id, CleanList, Nick, Param).
+    public_message(Id, S, Nick, Param).
 
 process_message(_, _, _, _, _).
 
