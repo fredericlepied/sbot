@@ -15,10 +15,12 @@
 %% communication predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fun_answer(List, _, Answer) :-
+fun_answer(List, _, [bold("fortune <word>"),
+                     ": fortune message\n",
+                     bold("weather <location>"),
+                     ": weather at location"]) :-
     member("fun", List),
-    member("help", List),
-    format(string(Answer), "~n~w~n~w", ["fortune <word>: fortune message", "weather <location>: weather at location"]).
+    member("help", List).
 
 fun_answer(["fortune"|Args], _, Answer) :-
     string_join(" ", Args, ArgsText),
