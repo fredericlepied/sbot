@@ -244,6 +244,12 @@ dlrn_answer(["dlrn", "remove", "pr", Pr, "from", Name, Branch], Context, Answer)
     github_answer(["github", "trackpr", Name, Name, Pr], Context, _),
     format(string(Answer), "ok added removing PR ~w from ~w ~w to my backlog.", [Pr, Name, Branch]).
 
+% dlrn update fedora key 29
+dlrn_answer(["dlrn", "update", "fedora", "key", Key], Context, Answer) :-
+    (update_fedora_key(Key) ->
+         format(string(Answer), "added fedora key ~w", [Key]);
+     format(string(Answer), "unable to add fedora key ~w", [Key])).
+
 % dlrn ansible
 dlrn_answer(List, _, Answer) :-
     member("dlrn", List),
@@ -336,5 +342,9 @@ get_download_error(_, _, RelPath, "invalid or expired") :-
     !.
 
 get_download_error(_, _, _, "download error").
+
+update_fedora_key(Key) :-
+    workspace("dlrn", Ws),
+    cmd("update_fedora_key.sh ~w ~w", [Ws, Key]).
 
 %% dlrn.pl ends here
