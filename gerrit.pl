@@ -23,14 +23,9 @@ update_gerrit_facts(Gen) :-
                                                    D.subject, D.lastUpdated))),
             _).
 
-% tricks to store the first gen number
 update_gerrit_facts(Gen) :-
-    not(get_old_fact(init_gen(gerrit, _))),
-    store_fact(Gen, init_gen(gerrit, Gen)).
-
-update_gerrit_facts(Gen) :-
-    get_old_fact(init_gen(gerrit, OldGen)),
-    store_fact(Gen, init_gen(gerrit, OldGen)).
+    not(get_midterm_fact(init_gen(gerrit, _))),
+    store_midterm_fact(init_gen(gerrit, Gen)).
 
 :- add_fact_updater(gerrit:update_gerrit_facts).
 
@@ -57,7 +52,7 @@ deduce_gerrit_facts(Gen) :-
 % new review deduced from polling
 deduce_gerrit_facts(Gen) :-
     not(use_stream),
-    get_fact(init_gen(gerrit, InitGen)),
+    get_midterm_fact(init_gen(gerrit, InitGen)),
     Gen \== InitGen,
     get_fact(gerrit_open_review(Project, Number, Owner, Subject, LastUpdated)),
     not(get_old_fact(gerrit_open_review(Project, Number, Owner, _, _))),

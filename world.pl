@@ -4,12 +4,11 @@
                   add_fact_deducer/1, add_fact_solver/1, fact_loop/0,
                   get_fact/1, get_old_fact/1, store_longterm_fact/1,
                   get_longterm_fact/1, last_gen/1, remove_longterm_fact/1,
+                  store_midterm_fact/1, get_midterm_fact/1, remove_midterm_fact/1,
                   store_nextgen_fact/1
                  ]).
 
-:- use_module(library(persistency)).
-
-:- dynamic fact/2, longterm/1, fact_updater/1, fact_deducer/1, fact_solver/1, last_gen/1.
+:- dynamic fact/2, longterm/1, midterm/1, fact_updater/1, fact_deducer/1, fact_solver/1, last_gen/1.
 
 :- include('save.pl').
 
@@ -55,6 +54,19 @@ remove_longterm_fact(Fact) :-
 
 save() :-
     tell('save.pl'), listing(longterm/1), told.
+
+get_midterm_fact(Fact) :-
+    midterm(Fact).
+
+store_midterm_fact(Fact) :-
+    midterm(Fact),
+    !.
+
+store_midterm_fact(Fact) :-
+    assertz(midterm(Fact)).
+
+remove_midterm_fact(Fact) :-
+    retractall(midterm(Fact)).
 
 add_fact_updater(Updater) :-
     fact_updater(Updater),
