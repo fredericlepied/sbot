@@ -73,7 +73,8 @@ dci_solver(_) :-
     split_string(NewComponent, " ", "", [_, ComponentPuddle]),
     ComponentPuddle \== Puddle,
     format(string(Text), "** DCI out of sync for ~w. DCI version: ~w | Puddle available: ~w", [Topic, ComponentPuddle, Puddle]),
-    notification(["dci", Product, Topic, "out_of_sync"], Text).
+    % notify only every 60 mn (12 x 5) to avoid flooding the chan every 5 mn
+    notification(["dci", Product, Topic, "out_of_sync"], Text, 12).
 
 dci_solver(_) :-
     get_fact(new_dci_job(Product, Topic, Component, Team, RemoteCI, JobStatus, JobId, RConf)),
@@ -134,11 +135,11 @@ dci_answer(["dci", "components", Product], _, Answer) :-
 
 dci_answer(Product, Answer) :-
     get_fact(dci_component(Product, Topic, Name)),
-    format(atom(Answer), "~n~w ~w", [Topic, Name]).
+    format(string(Answer), "~n~w ~w", [Topic, Name]).
 
 dci_answer(Answer) :-
     get_fact(dci_component(Product, Topic, Name)),
-    format(atom(Answer), "~n~w ~w ~w", [Product, Topic, Name]).
+    format(string(Answer), "~n~w ~w ~w", [Product, Topic, Name]).
 
 :- add_answerer(dci:dci_answer).
 

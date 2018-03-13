@@ -1,6 +1,6 @@
 %% -*- prolog -*-
 
-:- module(discuss, [process_message/5, add_answerer/1, notify/2, notification/2]).
+:- module(discuss, [process_message/5, add_answerer/1, notify/2, notification/2, notification/3]).
 
 :- use_module(library(irc_client_utilities)).
 :- use_module(library(irc_client_parser)).
@@ -9,6 +9,11 @@
 :- use_module(world).
 
 :- dynamic answerer/1.
+
+notification(List, Text, Times) :-
+    last_gen(Gen),
+    0 is Gen mod Times,
+    notification(List, Text).
 
 notification(List, Text) :-
     writeln(notification(List, Text)),
@@ -29,6 +34,7 @@ process_message(Id, Server, "PRIVMSG", Params, Text) :-
     config(irc_nick, IrcNick),
     member(IrcNick, Params),
     prefix_id(Server, Nick, _, _),
+    wait_a_bit,
     private_message(Id, CleanList, Nick).
 
 process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
@@ -38,6 +44,7 @@ process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
     delete(S, IrcNick, CleanList1),
     delete(CleanList1, "", CleanList),
     prefix_id(Server, Nick, _, _),
+    wait_a_bit,
     public_message(Id, CleanList, Nick, Param).
 
 process_message(_, _, _, _, _).
@@ -220,4 +227,8 @@ encode_irc(Text, Text).
 irc_color(Color, Text, Encoded) :-
     format(string(Encoded), "\x03\~w~w\x03", [Color,Text]).
 
+wait_a_bit :-
+    Delay is random_float * 5,
+    sleep(Delay).
+    
 %% discuss.pl ends here
