@@ -1,7 +1,7 @@
 %% -*- prolog -*-
 
 :- module(github,
-          [github_answer/3
+          [github_answer/3, github_issue/4, github_pullrequest/4
           ]).
 
 :- use_module(config).
@@ -110,5 +110,15 @@ github_answer(["github", "trackpr"], _, Answer) :-
     format(string(Answer), "tracking PR ~w", [TextUrls]).
 
 :- add_answerer(github:github_answer).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% type predicates
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+github_issue(Url, Owner, Project, IssueId) :-
+    split_string(Url, "/", "", [_, _, "github.com", Owner, Project, "issues", IssueId]).
+
+github_pullrequest(Url, Owner, Project, PRId) :-
+    split_string(Url, "/", "",  [_, _, "github.com", Owner, Project, "pull", PRId]).
 
 %% github.pl ends here
