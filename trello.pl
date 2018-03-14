@@ -130,16 +130,6 @@ trello_solver(_) :-
     format(string(Text), "** [~w] ~w made a comment on \"~w\" (~w)", [BoardName, Author, Name, ShortUrl]),
     notification(["trello", BoardName, "comment_added_card"], Text).
 
-trello_solver(_) :-
-    get_fact(github_closed_issue(_, _, _, GHIssueUrl, _, _, _)),
-    get_fact(trello_card(CardId, CardName, false, _, _, CardChecklists, CardUrl, _, _, _, BoardName)),
-    member(List, CardChecklists),
-    member(CheckItem, List.checkItems),
-    CheckItem.name == GHIssueUrl,
-    update_trello_checklist(CardId, CheckItem.id),
-    format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w)", [BoardName, GHIssueUrl, CardName, CardUrl]),
-    notification(["trello", BoardName, "checklist_marked_done_card"], Text).
-
 :- add_fact_solver(trello:trello_solver).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,8 +191,7 @@ trello_answer(["trello", "help"], _,
             bold("trello <board> new_card\n"),
             bold("trello <board> moved_card\n"),
             bold("trello <board> archived_card\n"),
-            bold("trello <board> comment_added_card\n"),
-            bold("trello <board> checklist_marked_done_card")
+            bold("trello <board> comment_added_card\n")
            ]).
 
 % trello lists
