@@ -1,6 +1,6 @@
 %% -*- prolog -*-
 
-:- module(discuss, [process_message/5, add_answerer/1, notify/2, notification/2, notification/3]).
+:- module(discuss, [process_message/5, add_answerer/1, notify/2, notification/2, notification/3, split_words/2]).
 
 :- use_module(library(irc_client_utilities)).
 :- use_module(library(irc_client_parser)).
@@ -28,8 +28,29 @@ extended_context([A, _, C], [A, C]).
 extended_context([A, B], [A, B]).
 extended_context([], []).
 
+% split a sentence into a list of words handling the '?' that can be
+% appended to the last word.
+split_words(String, Words) :-
+    split_string(String, " ", "@:.,!", List),
+    manage_question_mark(List, Words).
+
+manage_question_mark(List, Words) :-
+    reverse(List, [First|Reverse]),
+    fix_first(First, Fixed),
+    append(Fixed, Reverse, FixedList),
+    reverse(FixedList, Words).
+
+fix_first("?", ["?"]) :- !.
+fix_first(Word, ["?",Fixed]) :-
+    string_chars(Word, Chars),
+    reverse(Chars, ['?'|Reverse]),
+    reverse(Reverse, Straight),
+    string_chars(Fixed, Straight),
+    !.
+fix_first(Word, [Word]).
+
 process_message(Id, Server, "PRIVMSG", Params, Text) :-
-    split_string(Text, " ", "@:.,!", S),
+    split_words(Text, S),
     delete(S, "", CleanList),
     config(irc_nick, IrcNick),
     member(IrcNick, Params),
@@ -38,7 +59,7 @@ process_message(Id, Server, "PRIVMSG", Params, Text) :-
     private_message(Id, CleanList, Nick).
 
 process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
-    split_string(Text, " ", "@:.,!", S),
+    split_words(Text, S),
     config(irc_nick, IrcNick),
     member(IrcNick, S),
     delete(S, IrcNick, CleanList1),

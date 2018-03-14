@@ -2,7 +2,7 @@
 
 :- module(utils,
           [cmd/2, cmd/3, cmd/4, string_join/3, dirbase/3, workspace/2, url_workspace/2, get_config/3,
-           load_external_modules/0, sublist/2
+           load_external_modules/0, sublist/2, map/3, string_atom/2
           ]).
 
 :- use_module(config).
@@ -110,5 +110,13 @@ export_tools_path(_).
 sublist([], _).
 sublist([X|XS], [X|XSS]) :- sublist(XS, XSS), !.
 sublist(["*"|XS], [_|XSS]) :- sublist(XS, XSS).
+
+map(_, [], []) :- !.
+map(F, [S|Rest], [R|RRest]) :-
+    call(F, S, R),
+    map(F, Rest, RRest).
+
+string_atom(S, A) :-
+    atom_string(A, S).
 
 %% utils.pl ends here
