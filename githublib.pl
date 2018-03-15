@@ -7,9 +7,11 @@
 :- use_module(library(http/http_client)).
 :- use_module(library(http/http_open)).
 :- use_module(library(http/json)).
+:- use_module(utils).
 
 github_json(Path, Dict) :-
-    string_concat("https://api.github.com", Path, Url),
+    get_config(github_token, Token, ""),
+    format(string(Url), "https://api.github.com~w?access_token=~w", [Path, Token]),
     setup_call_cleanup(
         http_open(Url, In, [request_header('Accept'='application/vnd.github.v3+json')]),
         json_read_dict(In, Dict),
