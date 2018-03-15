@@ -16,36 +16,43 @@
 %% fact updater
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-update_trello_card_facts(Gen) :-
-    get_trello_cards(Cards),
-    member(Card, Cards),
-    get_fact(trello_list(Card.idList, ListName, _, _, BoardName)),
-    store_fact(Gen, trello_card(Card.id, Card.name, Card.closed, Card.badges.comments, Card.actions, Card.checklists, Card.shortUrl, Card.idList, ListName, Card.idBoard, BoardName)).
-
-update_trello_list_facts(Gen) :-
+update_trello_facts(Gen) :-
     get_trello_board(Board),
     store_fact(Gen, trello_board(Board.id, Board.name, Board.shortUrl)),
     get_trello_lists(Lists),
     member(List, Lists),
     store_fact(Gen, trello_list(List.id, List.name, List.closed, List.idBoard, Board.name)).
 
-:- add_fact_updater(trello:update_trello_card_facts).
-:- add_fact_updater(trello:update_trello_list_facts).
+update_trello_facts(Gen) :-
+    get_trello_cards(Cards),
+    member(Card, Cards),
+    get_fact(trello_list(Card.idList, ListName, _, _, BoardName)),
+    store_fact(Gen, trello_card(Card.id, Card.name, Card.closed, Card.badges.comments, Card.actions, Card.checklists, Card.shortUrl, Card.idList, ListName, Card.idBoard, BoardName)).
+
+update_trello_facts(Gen) :-
+    not(get_midterm_fact(init_gen(trello, _))),
+    store_midterm_fact(init_gen(trello, Gen)).
+
+:- add_fact_updater(trello:update_trello_facts).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% fact deducer
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+not_first_iteration(Gen) :-
+    get_midterm_fact(init_gen(trello, InitGen)),
+    Gen \== InitGen.
+
 % lists: new or unarchived
 deduce_trello_facts(Gen) :-
-    Gen \== 1,
+    not_first_iteration(Gen),
     get_fact(trello_list(Id, Name, false, BoardId, BoardName)),
     not(get_old_fact(trello_list(Id, _, false,  _, _))),
     store_fact(Gen, new_trello_list(Id, Name, BoardId, BoardName)).
 
 % lists: renamed (open list)
 deduce_trello_facts(Gen) :-
-    Gen \== 1,
+    not_first_iteration(Gen),
     get_fact(trello_list(Id, Name, false, BoardId, BoardName)),
     get_old_fact(trello_list(Id, OldName, _, _, _)),
     Name \== OldName,
@@ -53,21 +60,27 @@ deduce_trello_facts(Gen) :-
 
 % lists: archived list
 deduce_trello_facts(Gen) :-
-    Gen \== 1,
+    not_first_iteration(Gen),
     get_fact(trello_list(Id, Name, true, BoardId, BoardName)),
     get_old_fact(trello_list(Id, _, false, _, _)),
     store_fact(Gen, archived_trello_list(Id, Name, BoardId, BoardName)).
 
+deduce_trello_facts(Gen) :-
+    not_first_iteration(Gen),
+    get_old_fact(trello_list(Id, Name, _, BoardId, BoardName)),
+    not(get_fact(trello_list(Id, _, _, _, _))),
+    store_fact(Gen, archived_trello_list(Id, Name, BoardId, BoardName)).
+
 % cards: new card
 deduce_trello_facts(Gen) :-
-    Gen \== 1,
+    not_first_iteration(Gen),
     get_fact(trello_card(Id, Name, false, _, _, _, _, _, ListName, _, BoardName)),
     not(get_old_fact(trello_card(Id, _, false, _, _, _, _, _, _, _, _))),
     store_fact(Gen, new_trello_card(Id, Name, ListName, BoardName)).
 
 % cards: moved card
 deduce_trello_facts(Gen) :-
-    Gen \== 1,
+    not_first_iteration(Gen),
     get_fact(trello_card(Id, Name, false, _, _, _, _, ListId, _, _, BoardName)),
     get_old_fact(trello_card(Id, _, false, _, _, _, _, OldListId, _, _, _)),
     ListId \== OldListId,
@@ -77,14 +90,20 @@ deduce_trello_facts(Gen) :-
 
 % cards: archived card
 deduce_trello_facts(Gen) :-
-    Gen \== 1,
+    not_first_iteration(Gen),
     get_fact(trello_card(Id, Name, true, _, _, _, _, _, ListName, _, BoardName)),
     get_old_fact(trello_card(Id, _, false, _, _, _, _, _, _, _, _)),
     store_fact(Gen, archived_trello_card(Id, Name, ListName, BoardName)).
 
+deduce_trello_facts(Gen) :-
+    not_first_iteration(Gen),
+    get_old_fact(trello_card(Id, Name, _, _, _, _, _, _, ListName, _, BoardName)),
+    not(get_fact(trello_card(Id, _, _, _, _, _, _, _, _, _, _))),
+    store_fact(Gen, archived_trello_card(Id, Name, ListName, BoardName)).
+
 % cards: comment card
 deduce_trello_facts(Gen) :-
-    Gen \== 1,
+    not_first_iteration(Gen),
     get_fact(trello_card(Id, Name, false, CommentNumber, [Comment|_], _, ShortUrl, _, ListName, _, BoardName)),
     get_old_fact(trello_card(Id, _, false, OldCommentNumber, _, _, _, _, _, _, _)),
     OldCommentNumber \== CommentNumber,
@@ -192,7 +211,7 @@ get_trello_lists(Lists) :-
     config(trello_api_secret, TrelloApiSecret),
     config(trello_oauth_token, TrelloOAuthToken),
     config(trello_board, TrelloBoard),
-    format(string(TrelloUrl), "https://api.trello.com/1/boards/~w/lists?filter=all&key=~w&token=~w", [TrelloBoard, TrelloApiSecret, TrelloOAuthToken]),
+    format(string(TrelloUrl), "https://api.trello.com/1/boards/~w/lists/open?filter=all&key=~w&token=~w", [TrelloBoard, TrelloApiSecret, TrelloOAuthToken]),
     setup_call_cleanup(
         http_open(TrelloUrl, In, []),
         json_read_dict(In, Lists),
@@ -203,7 +222,7 @@ get_trello_cards(Cards) :-
     config(trello_api_secret, TrelloApiSecret),
     config(trello_oauth_token, TrelloOAuthToken),
     config(trello_board, TrelloBoard),
-    format(string(TrelloUrl), "https://api.trello.com/1/boards/~w/cards?actions=commentCard&checklists=all&filter=all&key=~w&token=~w", [TrelloBoard, TrelloApiSecret, TrelloOAuthToken]),
+    format(string(TrelloUrl), "https://api.trello.com/1/boards/~w/cards/visible?actions=commentCard&checklists=all&filter=all&key=~w&token=~w", [TrelloBoard, TrelloApiSecret, TrelloOAuthToken]),
     setup_call_cleanup(
         http_open(TrelloUrl, In, []),
         json_read_dict(In, Cards),
