@@ -10,6 +10,7 @@
 :- use_module(discuss).
 :- use_module(config).
 :- use_module(utils).
+:- use_module(githublib).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% fact updater
@@ -89,6 +90,26 @@ deduce_trello_facts(Gen) :-
     OldCommentNumber \== CommentNumber,
     store_fact(Gen, comment_added_trello_card(Id, Name, Comment.memberCreator.fullName, ShortUrl, ListName, BoardName)).
 
+% cards: checklist items matches github issue
+deduce_trello_facts(_) :-
+    get_fact(trello_card(CardId, _, false, _, _, CardChecklists, _, _, _, _, _)),
+    member(List, CardChecklists),
+    member(CheckItem, List.checkItems),
+    is_github_issue(CheckItem.name, Owner, Project, IssueId),
+    get_github_issue(Owner, Project, IssueId, Issue),
+    Issue.state == "open",
+    store_midterm_fact(trello_track_github_issue(CardId, CheckItem.id, CheckItem.name, Owner, Project, IssueId)).
+
+% cards: checklist items matches github pr
+deduce_trello_facts(_) :-
+    get_fact(trello_card(CardId, _, false, _, _, CardChecklists, _, _, _, _, _)),
+    member(List, CardChecklists),
+    member(CheckItem, List.checkItems),
+    is_github_pr(CheckItem.name, Owner, Project, PullRequestId),
+    get_github_pr(Owner, Project, PullRequestId, PullRequest),
+    PullRequest.state == "open",
+    store_midterm_fact(trello_track_github_pr(CardId, CheckItem.id, CheckItem.name, Owner, Project, PullRequestId)).
+
 :- add_fact_deducer(trello:deduce_trello_facts).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -131,14 +152,24 @@ trello_solver(_) :-
     notification(["trello", BoardName, "comment_added_card"], Text).
 
 trello_solver(_) :-
-    get_fact(github_closed_issue(_, _, _, GHIssueUrl, _, _, _)),
-    get_fact(trello_card(CardId, CardName, false, _, _, CardChecklists, CardUrl, _, _, _, BoardName)),
-    member(List, CardChecklists),
-    member(CheckItem, List.checkItems),
-    CheckItem.name == GHIssueUrl,
-    update_trello_checklist(CardId, CheckItem.id),
-    format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w)", [BoardName, GHIssueUrl, CardName, CardUrl]),
-    notification(["trello", BoardName, "checklist_marked_done_card"], Text).
+    get_midterm_fact(trello_track_github_issue(CardId, CheckItemId, Url, Owner, Project, Id)),
+    get_github_issue(Owner, Project, Id, Issue),
+    Issue.state == "closed",
+    update_trello_checklist(CardId, CheckItemId),
+    get_fact(trello_card(CardId, CardName, _, _, _, _, CardUrl, _, _, _, BoardName)),
+    format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w)", [BoardName, Url, CardName, CardUrl]),
+    notification(["trello", BoardName, "checklist_marked_done_card"], Text),
+    remove_midterm_fact(trello_track_github_issue(CardId, CheckItemId, Url, Owner, Project, Id)).
+
+trello_solver(_) :-
+    get_midterm_fact(trello_track_github_pr(CardId, CheckItemId, Url, Owner, Project, Id)),
+    get_github_pr(Owner, Project, Id, PullRequest),
+    PullRequest.state == "closed",
+    update_trello_checklist(CardId, CheckItemId),
+    get_fact(trello_card(CardId, CardName, _, _, _, _, CardUrl, _, _, _, BoardName)),
+    format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w)", [BoardName, Url, CardName, CardUrl]),
+    notification(["trello", BoardName, "checklist_marked_done_card"], Text),
+    remove_midterm_fact(trello_track_github_pr(CardId, CheckItemId, Url, Owner, Project, Id)).
 
 :- add_fact_solver(trello:trello_solver).
 
@@ -202,7 +233,7 @@ trello_answer(["trello", "help"], _,
             bold("trello <board> moved_card\n"),
             bold("trello <board> archived_card\n"),
             bold("trello <board> comment_added_card\n"),
-            bold("trello <board> checklist_marked_done_card")
+            bold("trello <board> checklist_marked_done_card\n")
            ]).
 
 % trello lists

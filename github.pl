@@ -16,17 +16,11 @@
 
 update_github_facts(Gen) :-
     get_longterm_fact(github_track_pr(Owner, Project, Pr, _)),
-    github_pr(Owner, Project, Pr, Dict),
+    get_github_pr(Owner, Project, Pr, Dict),
     store_fact(Gen, github_pr_sha(Owner, Project, Pr, Dict.head.sha)),
     store_fact(Gen, github_pr_html(Owner, Project, Pr, Dict.'_links'.html.href)),
     merge_status(Dict.merged, Status),
     store_fact(Gen, github_pr_merged(Owner, Project, Pr, Status)).
-
-update_github_facts(Gen) :-
-    config(github, [Owner, Project]),
-    github_issues(Owner, Project, Issues),
-    member(Issue, Issues),
-    store_fact(Gen, github_issue(Owner, Project, Issue.id, Issue.html_url, Issue.title, Issue.state, Issue.user.login)).
 
 merge_status(false, no).
 merge_status(true, yes).
@@ -42,11 +36,6 @@ deduce_github_facts(Gen) :-
     get_old_fact(github_pr_sha(Owner, Project, Pr, OldSha)),
     Sha \== OldSha,
     store_fact(Gen, github_updated_pr(Owner, Project, Pr, Sha, OldSha)).
-
-deduce_github_facts(Gen) :-
-    get_fact(github_issue(Owner, Project, Id, Url, Title, "closed", Reporter)),
-    get_old_fact(github_issue(_, _, Id, _, _, "open", _)),
-    store_fact(Gen, github_closed_issue(Owner, Project, Id, Url, Title, "closed", Reporter)).
 
 :- add_fact_deducer(github:deduce_github_facts).
 
@@ -69,12 +58,6 @@ github_solver(_) :-
     format(string(Text), "Github PR ~w merged", [Url]),
     notify(Text, Context).
 
-github_solver(_) :-
-    get_fact(github_closed_issue(Owner, Project, _, Url, Title, _, _)),
-    format(string(Text), "** [~w/~w] Issue \"~w\" has been closed (~w)", [Owner, Project, Title, Url]),
-    format(string(Repo), "~w/~w", [Owner, Project]),
-    notification(["github", Repo, "closed_issue"], Text).
-
 :- add_fact_solver(github:github_solver).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -85,9 +68,7 @@ github_solver(_) :-
 github_answer(["github", "help"], _,
            ["Available commands:\n",
             bold("github trackpr"), ": track the speficied PR.\n",
-            bold("github untrackpr"), ": untrack the specified PR.\n",
-            "Available notifications\n",
-            bold("github <Owner/Project> closed_issue")
+            bold("github untrackpr"), ": untrack the specified PR.\n"
            ]).
 
 % github trackpr ansible ansible 35917

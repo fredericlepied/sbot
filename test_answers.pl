@@ -38,9 +38,7 @@ test(answer_github_help) :-
     discuss:answer(["github", "help"], [irc, "nick"], Answer),
     assertion(Answer == ["Available commands:\n",
                          bold("github trackpr"), ": track the speficied PR.\n",
-                         bold("github untrackpr"), ": untrack the specified PR.\n",
-                         "Available notifications\n",
-                         bold("github <Owner/Project> closed_issue")
+                         bold("github untrackpr"), ": untrack the specified PR.\n"
                         ]).
 
 test(answer_puddle_help) :-
