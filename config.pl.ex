@@ -41,6 +41,9 @@ config(gitrepo, ["systemd-distgit", "git://pkgs.fedoraproject.org/rpms/systemd"]
 %% fedora settings
 %config(fedora_user, "user").
 
+%% github account settings
+%config(github_token, "ATOKEN").
+
 %% dci settings
 % config(dci_login, "login").
 % config(dci_password, "password").
