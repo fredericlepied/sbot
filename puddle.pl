@@ -37,6 +37,11 @@ deduce_puddle_facts(Gen) :-
     not(get_old_fact(puddle_info(ProdVer, Url, Type, _))),
     store_fact(Gen, new_puddle(ProdVer, Url, Type, New)).
 
+deduce_puddle_facts(Gen) :-
+    get_puddle_health(ProdVer, Type, Url, Puddle, OutputLines, Status),
+    Status == 1,
+    store_fact(Gen, puddle_unhealthy(ProdVer, Url, Type, Puddle, OutputLines)).
+
 :- add_fact_deducer(puddle:deduce_puddle_facts).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -52,6 +57,13 @@ puddle_solver(_) :-
     get_fact(new_puddle(ProdVer, _, Type, New)),
     format(string(Text), "** new puddle ~w for ~w ~w (first one)", [New, ProdVer, Type]),
     notification(["puddle", ProdVer, "new"], Text).
+
+puddle_solver(_) :-
+    get_fact(puddle_unhealthy(ProdVer, Url, Type, Puddle, OutputLines)),
+    string_join(", ", OutputLines, Result),
+    format(string(Text), "** Puddle ~w/~w is unhealthy (~w~w)\n~w", [ProdVer, Type, Url, Puddle, Result]),
+    % notify only every 120 mn (24 x 5) to avoid flooding the chan every 5 mn
+    notification(["puddle", ProdVer, "health_check"], Text, 24).
 
 :- add_fact_solver(puddle:puddle_solver).
 
@@ -84,6 +96,14 @@ lookup_product(Product, [Puddle, Product|_], Puddle) :-
 lookup_product(Product, [_|Rest], Puddle) :-
     lookup_product(Product, Rest, Puddle).
 
+puddle_health_check(Url, OutputLines, Status) :-
+    cmd("health_puddle.sh ~w", [Url], OutputLines, Status).
+
+get_puddle_health(ProdVer, Type, Url, Puddle, OutputLines, Status) :-
+    get_fact(puddle_info(ProdVer, Url, Type, Puddle)),
+    format(string(PuddleUrl), "~w/~w", [Url, Type]),
+    puddle_health_check(PuddleUrl, OutputLines, Status).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Communication predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -94,8 +114,10 @@ puddle_answer(List, _,
                bold("puddle"), ": display the list of available puddles.\n",
                bold("puddle <puddle>"), ": display the list of aliases for this puddle.\n",
                bold("puddle <puddle> <alias>"), ": display the real puddle name for this alias and its URL.\n",
+               bold("puddle health <puddle> <alias>"), ": display the health check of the puddle.\n",
                "Available notification:\n",
-               bold("puddle <prodver> new")
+               bold("puddle <prodver> new\n"),
+               bold("puddle <prodver> health_check")
               ]) :-
     member("puddle", List),
     member("help", List).
@@ -112,6 +134,14 @@ puddle_answer(["puddle", ProdVer, Type], _, Answer) :-
     format(string(Answer), "~w ~w is ~w ~w~w", [ProdVer, Type, Puddle, Url, Puddle]).
 
 puddle_answer(["puddle", ProdVer, Type], _, Answer) :-
+    format(string(Answer), "~w ~w does not exist", [ProdVer, Type]).
+
+puddle_answer(["puddle", "health", ProdVer, Type], _, Answer) :-
+    get_puddle_health(ProdVer, Type, Url, Puddle, OutputLines, _),
+    string_join(", ", OutputLines, Result),
+    format(string(Answer), "~w/~w ~w~w\n~w", [ProdVer, Type, Url, Puddle, Result]).
+
+puddle_answer(["puddle", "health", ProdVer, Type], _, Answer) :-
     format(string(Answer), "~w ~w does not exist", [ProdVer, Type]).
 
 % puddle
