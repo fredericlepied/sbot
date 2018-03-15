@@ -109,22 +109,24 @@ deduce_trello_facts(Gen) :-
     OldCommentNumber \== CommentNumber,
     store_fact(Gen, comment_added_trello_card(Id, Name, Comment.memberCreator.fullName, ShortUrl, ListName, BoardName)).
 
-% cards: checklist items matches github issue
+% cards: checklist items matches github issue or pr
 deduce_trello_facts(_) :-
     get_fact(trello_card(CardId, _, false, _, _, CardChecklists, _, _, _, _, _)),
     member(List, CardChecklists),
     member(CheckItem, List.checkItems),
-    is_github_issue(CheckItem.name, Owner, Project, IssueId),
+    split_string(CheckItem.name, " ", "()", ListOfWords),
+    member(Url, ListOfWords),
+    sub_string(Url, _, _, _, "http"),
+    check_github_issue_or_pr(Url, CheckItem, CardId).
+
+check_github_issue_or_pr(Url, CheckItem, CardId) :-
+    is_github_issue(Url, Owner, Project, IssueId),
     get_github_issue(Owner, Project, IssueId, Issue),
     Issue.state == "open",
     store_midterm_fact(trello_track_github_issue(CardId, CheckItem.id, CheckItem.name, Owner, Project, IssueId)).
 
-% cards: checklist items matches github pr
-deduce_trello_facts(_) :-
-    get_fact(trello_card(CardId, _, false, _, _, CardChecklists, _, _, _, _, _)),
-    member(List, CardChecklists),
-    member(CheckItem, List.checkItems),
-    is_github_pr(CheckItem.name, Owner, Project, PullRequestId),
+check_github_issue_or_pr(Url, CheckItem, CardId) :-
+    is_github_pr(Url, Owner, Project, PullRequestId),
     get_github_pr(Owner, Project, PullRequestId, PullRequest),
     PullRequest.state == "open",
     store_midterm_fact(trello_track_github_pr(CardId, CheckItem.id, CheckItem.name, Owner, Project, PullRequestId)).
