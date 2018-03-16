@@ -126,20 +126,29 @@ check_url_type(Url, CheckItem, CardId) :-
     get_github_issue(Owner, Project, IssueId, _),
     store_midterm_fact(trello_track_github_issue(CardId, CheckItem.id, CheckItem.name, Owner, Project, IssueId)).
 
+% github pr
 check_url_type(Url, CheckItem, CardId) :-
     is_github_pr(Url, Owner, Project, PullRequestId),
     get_github_pr(Owner, Project, PullRequestId, _),
     store_midterm_fact(trello_track_github_pr(CardId, CheckItem.id, CheckItem.name, Owner, Project, PullRequestId)).
 
+% github issue
 check_url_type(Url, CheckItem, CardId) :-
     is_gerrit_review(Url, ReviewId, BaseUrl),
     get_fact(gerrit_open_review(_, ReviewId, _, _, _)),
     store_midterm_fact(trello_track_gerrit_review(CardId, CheckItem.id, CheckItem.name, ReviewId, BaseUrl)).
 
+% gerrit review
 check_url_type(Url, CheckItem, CardId) :-
     is_gerrit_review(Url, ReviewId, BaseUrl),
     get_gerrit_review(BaseUrl, ReviewId, _),
     store_midterm_fact(trello_track_gerrit_review(CardId, CheckItem.id, CheckItem.name, ReviewId, BaseUrl)).
+
+% trello
+check_url_type(Url, CheckItem, CardId) :-
+    split_string(Url, "/", "", ["https:", "", "trello.com", "c", ShortId|_]),
+    string_join("/", ["https:", "", "trello.com", "c", ShortId], ShortUrl),
+    store_midterm_fact(trello_track_trello_card(CardId, CheckItem.id, CheckItem.name, ShortUrl)).
 
 :- add_fact_deducer(trello:deduce_trello_facts).
 
@@ -211,6 +220,16 @@ trello_solver(_) :-
     format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w) [gerrit review]", [BoardName, Url, CardName, CardUrl]),
     notification(["trello", BoardName, "checklist_marked_done_card"], Text),
     remove_midterm_fact(trello_track_gerrit_review(CardId, CheckItemId, Url, ReviewId, BaseUrl)).
+
+trello_solver(_) :-
+    get_midterm_fact(trello_track_trello_card(CardId, CheckItemId, Url, ShortUrl)),
+    get_fact(trello_card(_, CardName, _, _, _, _, ShortUrl, _, ListName, _, BoardName)),
+    get_config(trello_done_lists, DoneList, []),
+    member(ListName, DoneList),
+    update_trello_checklist(CardId, CheckItemId),
+    format(string(Text), "** [~w] ~w has been checked on \"~w\" [trello card]", [BoardName, Url, CardName]),
+    notification(["trello", BoardName, "checklist_marked_done_card"], Text),
+    remove_midterm_fact(trello_track_trello_card(CardId, CheckItemId, Url, ShortUrl)).
 
 :- add_fact_solver(trello:trello_solver).
 

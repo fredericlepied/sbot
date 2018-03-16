@@ -61,6 +61,7 @@ config(gitrepo, ["systemd-distgit", "git://pkgs.fedoraproject.org/rpms/systemd"]
 config(trello_api_secret, "A_SECRET").
 config(trello_oauth_token, "atokenexampleuuidnumber").
 config(trello_board, "uuid").
+config(trello_done_lists, ["Done"]).
 
 %% prometheus settings
 % config(prometheus_alertmanager, "https://url/to/alertmanager").
