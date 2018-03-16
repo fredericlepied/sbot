@@ -17,7 +17,7 @@ config(irc_channels, ["##testbot"]).
 %config(external_git_module, "file:///home/sbot/repo/sbot-config").
 
 %% add the optional modules you want to activate to the list
-config(modules, [dlrn, irc, self, autoupdate, github, puddle, fun, fedora, admin, dci, gerrit, trello]).
+config(modules, [dlrn, irc, self, autoupdate, github, puddle, fun, fedora, admin, dci, gerrit, trello, prometheus]).
 
 %% admin-team members
 config(admins, ["admin-1", "admin-2"]).
@@ -61,5 +61,8 @@ config(gitrepo, ["systemd-distgit", "git://pkgs.fedoraproject.org/rpms/systemd"]
 config(trello_api_secret, "A_SECRET").
 config(trello_oauth_token, "atokenexampleuuidnumber").
 config(trello_board, "uuid").
+
+%% prometheus settings
+% config(prometheus_alertmanager, "https://url/to/alertmanager").
 
 %% config.pl ends here
