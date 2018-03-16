@@ -47,8 +47,8 @@ not_first_iteration(Gen) :-
 % lists: new or unarchived
 deduce_trello_facts(Gen) :-
     not_first_iteration(Gen),
-    get_fact(trello_list(Id, Name, false, BoardId, BoardName)),
-    not(get_old_fact(trello_list(Id, _, false,  _, _))),
+    get_fact(trello_list(Id, Name, _, BoardId, BoardName)),
+    not(get_old_fact(trello_list(Id, _, _,  _, _))),
     store_fact(Gen, new_trello_list(Id, Name, BoardId, BoardName)).
 
 % lists: renamed (open list)
@@ -123,12 +123,12 @@ deduce_trello_facts(_) :-
 
 check_url_type(Url, CheckItem, CardId) :-
     is_github_issue(Url, Owner, Project, IssueId),
-    get_github_issue(Owner, Project, IssueId, Issue),
+    get_github_issue(Owner, Project, IssueId, _),
     store_midterm_fact(trello_track_github_issue(CardId, CheckItem.id, CheckItem.name, Owner, Project, IssueId)).
 
 check_url_type(Url, CheckItem, CardId) :-
     is_github_pr(Url, Owner, Project, PullRequestId),
-    get_github_pr(Owner, Project, PullRequestId, PullRequest),
+    get_github_pr(Owner, Project, PullRequestId, _),
     store_midterm_fact(trello_track_github_pr(CardId, CheckItem.id, CheckItem.name, Owner, Project, PullRequestId)).
 
 check_url_type(Url, CheckItem, CardId) :-
@@ -138,7 +138,7 @@ check_url_type(Url, CheckItem, CardId) :-
 
 check_url_type(Url, CheckItem, CardId) :-
     is_gerrit_review(Url, ReviewId, BaseUrl),
-    get_gerrit_review(BaseUrl, ReviewId, Review),
+    get_gerrit_review(BaseUrl, ReviewId, _),
     store_midterm_fact(trello_track_gerrit_review(CardId, CheckItem.id, CheckItem.name, ReviewId, BaseUrl)).
 
 :- add_fact_deducer(trello:deduce_trello_facts).
@@ -188,7 +188,7 @@ trello_solver(_) :-
     Issue.state == "closed",
     update_trello_checklist(CardId, CheckItemId),
     get_fact(trello_card(CardId, CardName, _, _, _, _, CardUrl, _, _, _, BoardName)),
-    format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w)", [BoardName, Url, CardName, CardUrl]),
+    format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w) [github issue]", [BoardName, Url, CardName, CardUrl]),
     notification(["trello", BoardName, "checklist_marked_done_card"], Text),
     remove_midterm_fact(trello_track_github_issue(CardId, CheckItemId, Url, Owner, Project, Id)).
 
@@ -198,7 +198,7 @@ trello_solver(_) :-
     PullRequest.state == "closed",
     update_trello_checklist(CardId, CheckItemId),
     get_fact(trello_card(CardId, CardName, _, _, _, _, CardUrl, _, _, _, BoardName)),
-    format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w)", [BoardName, Url, CardName, CardUrl]),
+    format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w) [github pr]", [BoardName, Url, CardName, CardUrl]),
     notification(["trello", BoardName, "checklist_marked_done_card"], Text),
     remove_midterm_fact(trello_track_github_pr(CardId, CheckItemId, Url, Owner, Project, Id)).
 
@@ -208,9 +208,9 @@ trello_solver(_) :-
     Review.status == "MERGED",
     update_trello_checklist(CardId, CheckItemId),
     get_fact(trello_card(CardId, CardName, _, _, _, _, CardUrl, _, _, _, BoardName)),
-    format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w)", [BoardName, Url, CardName, CardUrl]),
+    format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w) [gerrit review]", [BoardName, Url, CardName, CardUrl]),
     notification(["trello", BoardName, "checklist_marked_done_card"], Text),
-    remove_midterm_fact(trello_track_gerrit_review(CardId, CheckItemId, Url, ReviewId, _)).
+    remove_midterm_fact(trello_track_gerrit_review(CardId, CheckItemId, Url, ReviewId, BaseUrl)).
 
 :- add_fact_solver(trello:trello_solver).
 
