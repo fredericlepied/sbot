@@ -115,33 +115,31 @@ deduce_trello_facts(_) :-
     get_fact(trello_card(CardId, _, false, _, _, CardChecklists, _, _, _, _, _)),
     member(List, CardChecklists),
     member(CheckItem, List.checkItems),
-    split_string(CheckItem.name, " ", "()", ListOfWords),
+    CheckItem.state == "incomplete",
+    split_string(CheckItem.name, " ", "()\"", ListOfWords),
     member(Url, ListOfWords),
-    sub_string(Url, _, _, _, "http"),
+    sub_string(Url, 0, _, _, "http"),
     check_url_type(Url, CheckItem, CardId).
 
 check_url_type(Url, CheckItem, CardId) :-
     is_github_issue(Url, Owner, Project, IssueId),
     get_github_issue(Owner, Project, IssueId, Issue),
-    Issue.state == "open",
     store_midterm_fact(trello_track_github_issue(CardId, CheckItem.id, CheckItem.name, Owner, Project, IssueId)).
 
 check_url_type(Url, CheckItem, CardId) :-
     is_github_pr(Url, Owner, Project, PullRequestId),
     get_github_pr(Owner, Project, PullRequestId, PullRequest),
-    PullRequest.state == "open",
     store_midterm_fact(trello_track_github_pr(CardId, CheckItem.id, CheckItem.name, Owner, Project, PullRequestId)).
 
 check_url_type(Url, CheckItem, CardId) :-
-    is_gerrit_review(Url, ReviewId),
+    is_gerrit_review(Url, ReviewId, BaseUrl),
     get_fact(gerrit_open_review(_, ReviewId, _, _, _)),
-    store_midterm_fact(trello_track_gerrit_review(CardId, CheckItem.id, CheckItem.name, ReviewId)).
+    store_midterm_fact(trello_track_gerrit_review(CardId, CheckItem.id, CheckItem.name, ReviewId, BaseUrl)).
 
 check_url_type(Url, CheckItem, CardId) :-
-    is_gerrit_review(Url, ReviewId),
-    get_gerrit_review(ReviewId, Review),
-    Review.open == true,
-    store_midterm_fact(trello_track_gerrit_review(CardId, CheckItem.id, CheckItem.name, ReviewId)).
+    is_gerrit_review(Url, ReviewId, BaseUrl),
+    get_gerrit_review(BaseUrl, ReviewId, Review),
+    store_midterm_fact(trello_track_gerrit_review(CardId, CheckItem.id, CheckItem.name, ReviewId, BaseUrl)).
 
 :- add_fact_deducer(trello:deduce_trello_facts).
 
@@ -205,14 +203,14 @@ trello_solver(_) :-
     remove_midterm_fact(trello_track_github_pr(CardId, CheckItemId, Url, Owner, Project, Id)).
 
 trello_solver(_) :-
-    get_midterm_fact(trello_track_gerrit_review(CardId, CheckItemId, Url, ReviewId)),
-    get_gerrit_review(ReviewId, Review),
-    Review.open == false,
+    get_midterm_fact(trello_track_gerrit_review(CardId, CheckItemId, Url, ReviewId, BaseUrl)),
+    get_gerrit_review(BaseUrl, ReviewId, Review),
+    Review.status == "MERGED",
     update_trello_checklist(CardId, CheckItemId),
     get_fact(trello_card(CardId, CardName, _, _, _, _, CardUrl, _, _, _, BoardName)),
     format(string(Text), "** [~w] ~w has been checked on \"~w\" (~w)", [BoardName, Url, CardName, CardUrl]),
     notification(["trello", BoardName, "checklist_marked_done_card"], Text),
-    remove_midterm_fact(trello_track_gerrit_review(CardId, CheckItemId, Url, ReviewId)).
+    remove_midterm_fact(trello_track_gerrit_review(CardId, CheckItemId, Url, ReviewId, _)).
 
 :- add_fact_solver(trello:trello_solver).
 
