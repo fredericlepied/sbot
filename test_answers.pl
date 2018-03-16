@@ -47,8 +47,10 @@ test(answer_puddle_help) :-
                          bold("puddle"), ": display the list of available puddles.\n",
                          bold("puddle <puddle>"), ": display the list of aliases for this puddle.\n",
                          bold("puddle <puddle> <alias>"), ": display the real puddle name for this alias and its URL.\n",
+                         bold("puddle health <puddle> <alias>"), ": display the health check of the puddle.\n",
                          "Available notification:\n",
-                         bold("puddle <prodver> new")
+                         bold("puddle <prodver> new\n"),
+                         bold("puddle <prodver> health_check")
                         ]).
 
 test(answer_self_help) :-
