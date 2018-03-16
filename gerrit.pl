@@ -1,9 +1,10 @@
 %% -*- prolog -*-
 
-:- module(gerrit, []).
+:- module(gerrit, [gerrit_query/2]).
 
 :- use_module(library(http/json)).
 
+:- use_module(gerritlib).
 :- use_module(config).
 :- use_module(discuss).
 :- use_module(utils).
