@@ -7,6 +7,7 @@
 :- use_module(config).
 :- use_module(utils).
 :- use_module(world).
+:- use_module(irc).
 
 :- dynamic answerer/1.
 
@@ -134,7 +135,8 @@ answer(List, [_,Nick|_], Answer) :-
     member(Elt, List),
     string_upper(Elt, UpperElt),
     member(UpperElt, ["HI", "HELLO", "SALUT", "BONJOUR", "HOLA", "HEY", "MORNING"]),
-    format(string(Answer), "~w ~w", [Elt, Nick]),
+    get_latest_nick(Nick, CurrentNick),
+    format(string(Answer), "~w ~w", [Elt, CurrentNick]),
     !.
 
 answer([Elt|_], Context, Answer) :-
@@ -161,11 +163,13 @@ answer(_, Context, Answer) :-
     add_prefix(Context, "not understood. Use 'help' to list what I understand.", Answer).
 
 add_prefix([_, Nick, _], [Text|Rest], [PrefixedText,Text|Rest]) :-
-    format(string(PrefixedText), "~w: ", [Nick]),
+    get_latest_nick(Nick, CurrentNick),
+    format(string(PrefixedText), "~w: ", [CurrentNick]),
     !.
 
 add_prefix([_, Nick, _], Text, PrefixedText) :-
-    format(string(PrefixedText), "~w: ~w", [Nick, Text]),
+    get_latest_nick(Nick, CurrentNick),
+    format(string(PrefixedText), "~w: ~w", [CurrentNick, Text]),
     !.
 
 add_prefix(_, Text, Text).
