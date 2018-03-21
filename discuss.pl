@@ -256,7 +256,7 @@ irc_color(Color, Text, Encoded) :-
     format(string(Encoded), "\x03\~w~w\x03", [Color,Text]).
 
 wait_a_bit :-
-    Delay is random_float * 5,
+    Delay is random_float * 1,
     sleep(Delay).
     
 %% discuss.pl ends here
