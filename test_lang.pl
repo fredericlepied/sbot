@@ -9,9 +9,8 @@ test_phrase(String) :-
 
 test_phrase(String, Result) :-
     split_words(String, Words),
-    lang:strings_atoms(Words, Atoms),
-    writeln(Atoms),
-    phrase(sentence(Result), Atoms).
+    writeln(Words),
+    phrase(sentence(Result), Words).
 
 :- begin_tests(test_lang).
 
@@ -26,6 +25,10 @@ test(which) :- test_phrase("which partners are testing osp12?").
 test(apply) :- test_phrase("apply pr 42 on ansible").
 
 test(track) :- test_phrase("could you track pr 42 on the ansible package ?").
+
+test(count) :- test_phrase("please could you count how many cards do we have?").
+test(count2) :- test_phrase("how many cards?").
+test(count3) :- test_phrase("count how many jobs on OSP12?").
 
 :- end_tests(test_lang).
 
