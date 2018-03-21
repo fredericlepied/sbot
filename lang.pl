@@ -53,6 +53,7 @@ verbal_group(follow(O)) --> ["track"], object(O).
 verbal_group(follow(O)) --> ["follow"], object(O).
 
 object(obj(N)) --> det, noun(N).
+object(obj(N, C)) --> det, noun(N, C).
 object(obj(N, C)) --> det, noun(N), complement(C).
 
 complement(N) --> ["in"], object(N).
@@ -101,6 +102,15 @@ noun(list(List)) --> list(List), ["list"].
 noun(list(_)) --> ["list"].
 noun(list(_)) --> ["lists"].
 noun(status(O)) --> ["status","of"], object(O).
+noun(puddle(Puddle)) --> puddle(Puddle).
+noun(puddle(Puddle)) --> puddle(Puddle), ["puddle"].
+noun(puddle(Puddle)) --> ["puddle"], puddle(Puddle).
+noun(puddle(_)) --> ["puddle"].
+noun(puddle(_)) --> ["puddles"].
+noun(alias(_)) --> ["alias"].
+noun(alias(_)) --> ["aliases"].
+noun(puddle(_),alias(Alias)) --> alias(Alias), ["puddle"].
+noun(puddle(_),alias(Alias)) --> alias(Alias).
 
 github_pr --> ["pr"].
 github_pr --> ["github","pr"].
@@ -153,6 +163,12 @@ validate_count(partner(_), topic(_)).
 validate_apply(pr(_), package(_)).
 validate_apply(review(_), package(_)).
 
+puddle(C, [C|R], R) :-
+    is_a(puddle, C).
+
+alias(T, [T|R], R) :-
+    is_a(alias, T).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -185,6 +201,16 @@ is_a(card, O) :-
 
 is_a(list, O) :-
     get_fact(trello_list(_, O, _, _, _)).
+
+is_a(alert, O) :-
+    get_fact(prometheus_alert(_, Alert)),
+    O = Alert.annotations.summary.
+
+is_a(puddle, O) :-
+    get_fact(puddle_info(_, _, _, O)).
+
+is_a(alias, O) :-
+    get_fact(puddle_info(_, _, O, _)).
 
 property(O, list, P) :-
     get_fact(trello_card(O, _, _, _, _, _, _, _, P, _, _)).
@@ -231,6 +257,31 @@ property(O, id, P) :-
 property(O, rconf, P) :-
     get_fact(dci_job(_, _, _, _, O, _, _, P)).
 
+property(O, severity, P) :-
+    get_fact(prometheus_alert(_, Alert)),
+    O = Alert.annotations.summary,
+    P = Alert.labels.severity.
+
+property(O, instance, P) :-
+    get_fact(prometheus_alert(_, Alert)),
+    O = Alert.annotations.summary,
+    P = Alert.labels.instance.
+
+property(O, component, P) :-
+    get_fact(puddle_info(P, _, _, O)).
+
+property(O, url, P) :-
+    get_fact(puddle_info(_, P, _, O)).
+
+property(O, type, P) :-
+    get_fact(puddle_info(_, _, P, O)).
+
+property(O, alias, P) :-
+    get_fact(puddle_info(_, _, P, O)).
+
+property(O, component, P) :-
+    get_fact(puddle_info(P, _, O, _)).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % NLU: Compute answer
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -267,11 +318,23 @@ execute(find(obj(Obj), obj(Obj2)), Answer) :-
     setof(Var, (is_a(Name, Var), property(Var, Name2, Prop)), List),
     string_join(", ", List, Answer). 
 
+execute(find(obj(Obj, obj(Obj2))), Answer) :-
+    execute(find(obj(Obj), obj(Obj2)), Answer).
+
 execute(find(obj(Obj), obj(Obj2)), Answer) :-
     compound_name_arity(Obj, Name, _),
     compound_name_arguments(Obj2, _, [Prop]),
     is_a(Name, _),
     format(string(Answer), "we have no ~w for ~w", [Name, Prop]).
+
+% find(obj(puddle(_1016),alias(latest)),obj(component(OSP11)))
+execute(find(obj(Obj, Obj2), obj(Obj3)), Answer) :-
+    compound_name_arity(Obj, Name, _),
+    compound_name_arguments(Obj2, Name2, [Prop2]),
+    compound_name_arguments(Obj3, Name3, [Prop3]),
+    writeln(setof(Var, (is_a(Name, Var), property(Var, Name2, Prop2), property(Var, Name3, Prop3)), List)),
+    setof(Var, (is_a(Name, Var), property(Var, Name2, Prop2), property(Var, Name3, Prop3)), List),
+    string_join(", ", List, Answer). 
 
 execute(find(obj(_)), "Unable to find what you asked for. Sorry.").
 
@@ -290,7 +353,7 @@ strings_atoms(ListOfStrings, ListOfAtoms) :-
     
 lang_answer(["lang"|List], _, Answer) :-
     (phrase(sentence(Result), List) -> 
-         execute(Result, Answer);
+         (writeln(execute(Result)), execute(Result, Answer));
      format(string(Answer), "Unable to understand ~w", [List])).
 
 :- add_answerer(lang:lang_answer).
