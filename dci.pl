@@ -114,7 +114,6 @@ dci_answer(["dci", "help"], _,
             bold("dci components <product>"), ": display the list of latest components for a product.\n",
             "Available notifications\n",
             bold("dci <product> <topic> new_component\n"),
-            bold("dci <product> <topic> new_component\n"),
             bold("dci <product> <topic> out_of_sync\n"),
             bold("dci <product> <topic> new_job")
            ]).
