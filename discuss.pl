@@ -84,12 +84,14 @@ process_message(_, _, _, _, _).
 
 private_message(Id, TextList, Nick) :-
     Context = [Id, Nick],
+    update_interactions,
     answer(TextList, Context, Answer),
     send_message(Answer, Context).
 
 % public message directed to the bot
 public_message(Id, TextList, Nick, Chan) :-
     Context = [Id, Nick, Chan],
+    update_interactions,
     answer(TextList, Context, Answer),
     send_message(Answer, Context).
 
@@ -286,5 +288,22 @@ irc_color(Color, Text, Encoded) :-
 wait_a_bit :-
     Delay is random_float * 1,
     sleep(Delay).
-    
+
+get_today_date(Today) :-
+    get_time(T),
+    stamp_date_time(T, date(Y, M, D, _, _, _, _, _, _), 'UTC'),
+    format(string(Today), "~w/~w/~w", [Y, M, D]).
+
+update_interactions :-
+    get_today_date(Today),
+    get_longterm_fact(interaction(Today, Interaction)),
+    remove_longterm_fact(interaction(Today, Interaction)),
+    NewInteraction is Interaction + 1,
+    store_longterm_fact(interaction(Today, NewInteraction)),
+    !.
+
+update_interactions :-
+    get_today_date(Today),
+    store_longterm_fact(interaction(Today, 1)).
+
 %% discuss.pl ends here

@@ -16,7 +16,8 @@ admin_answer(["admin", "help"], [_, Nick|_],
            ["Available commands:\n",
             bold("kill"), ": kill botsito.\n",
             bold("notunderstood list"), ": list all sentences bot did not unserstand.\n",
-            bold("notunderstood remove <sentence>"), ": remove sentence from the not understood sentence databas."
+            bold("notunderstood remove <sentence>"), ": remove sentence from the not understood sentence databas.\n",
+            bold("interactions list"), ": list number of interactions with bot per day."
            ]) :-
     config(admins, Admins),
     member(Nick, Admins).
@@ -57,6 +58,20 @@ admin_answer(["notunderstood", "remove"|Sentence], [_,Nick|_], Answer) :-
 
 admin_answer(["notunderstood", "remove"|_], _, Answer) :-
     format(string(Answer), "~w", ["Not allowed"]).
+
+admin_answer(["interactions", "list"], [_,Nick|_], Answer) :-
+    config(admins, Admins),
+    member(Nick, Admins),
+    findall(Status, admin_answer(Status), Statuses),
+    string_join("\n", Statuses, FinalStatus),
+    format(string(Answer), "\n~w", [FinalStatus]).
+
+admin_answer(["interactions", "list"], _, Answer) :-
+    format(string(Answer), "~w", ["Not allowed"]).
+
+admin_answer(Status) :-
+    get_longterm_fact(interaction(Date, Interactions)),
+    format(string(Status), "~w: ~w", [Date, Interactions]).
 
 :- add_answerer(admin:admin_answer).
 
