@@ -185,7 +185,9 @@ answer([Help], Context, Answer) :-
                 bold("subscriptions")], Answer),
     !.
 
-answer(_, Context, Answer) :-
+answer(List, Context, Answer) :-
+    string_join(" ", List, Text),
+    store_longterm_fact(not_understood_sentence(Text)),
     add_prefix(Context, "not understood. Use 'help' to list what I understand.", Answer).
 
 add_prefix([_, Nick, _], [Text|Rest], [PrefixedText,Text|Rest]) :-
