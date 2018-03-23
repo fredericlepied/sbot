@@ -99,7 +99,10 @@ noun(card(_)) --> ["cards"].
 noun(list(List)) --> ["trello","list"], list(List).
 noun(list(List)) --> ["list"], list(List).
 noun(list(List)) --> list(List), ["list"].
+noun(list(List)) --> list(List).
+noun(list(_)) --> ["trello","list"].
 noun(list(_)) --> ["list"].
+noun(list(_)) --> ["trello","lists"].
 noun(list(_)) --> ["lists"].
 noun(status(O)) --> ["status","of"], object(O).
 noun(puddle(Puddle)) --> puddle(Puddle).
@@ -150,8 +153,18 @@ component(T, [T|R], R) :-
 card(C, [C|R], R) :-
     is_a(card, C).
 
+card(C, L, R) :-
+    is_a(card, C),
+    split_string(C, " ", "", Strings),
+    append(Strings, R, L).
+
 list(C, [C|R], R) :-
     is_a(list, C).
+
+list(C, L, R) :-
+    is_a(list, C),
+    split_string(C, " ", "", Strings),
+    append(Strings, R, L).
 
 partner(P, [P|R], R) :-
     is_a(partner, P).
@@ -189,18 +202,10 @@ is_a(component, O) :-
     get_fact(dci_component(_, O, _)).
 
 is_a(card, O) :-
-    get_fact(trello_card(O, _, _, _, _, _, _, _, _, _, _)).
+    get_fact(trello_card(_, O, _, _, _, _, _, _, _, _, _)).
 
-%is_a(list, E) :-
-%    get_fact(trello_list(_, O, _, _, _)),
-%    split_string(O, " ", "", [E]).
-%
-%is_a(list, L) :-
-%    get_fact(trello_list(_, O, _, _, _)),
-%    split_string(O, " ", "", L).
-
-is_a(list, O) :-
-    get_fact(trello_list(_, O, _, _, _)).
+is_a(list, E) :-
+    get_fact(trello_list(_, E, _, _, _)).
 
 is_a(alert, O) :-
     get_fact(prometheus_alert(_, Alert)),
@@ -213,7 +218,7 @@ is_a(alias, O) :-
     get_fact(puddle_info(_, _, O, _)).
 
 property(O, list, P) :-
-    get_fact(trello_card(O, _, _, _, _, _, _, _, P, _, _)).
+    get_fact(trello_card(_, O, _, _, _, _, _, _, P, _, _)).
 
 property(O, project, P) :-
     get_fact(gerrit_open_review(P ,O, _, _, _)).
