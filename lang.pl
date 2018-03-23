@@ -341,13 +341,6 @@ execute(find(obj(Obj, Obj2), obj(Obj3)), Answer) :-
     setof(Var, (is_a(Name, Var), property(Var, Name2, Prop2), property(Var, Name3, Prop3)), List),
     string_join(", ", List, Answer). 
 
-execute(find(obj(_)), "Unable to find what you asked for. Sorry.").
-
-execute(find(obj(_), _, obj(_)), "Unable to find what you asked for. Sorry.").
-
-execute(F, "No entiendo. Sorry.") :-
-    writeln(F).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% communication predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -358,8 +351,15 @@ strings_atoms(ListOfStrings, ListOfAtoms) :-
     
 lang_answer(["lang"|List], _, Answer) :-
     (phrase(sentence(Result), List) -> 
-         (writeln(execute(Result)), execute(Result, Answer));
-     format(string(Answer), "Unable to understand ~w", [List])).
+         (execute(Result, Answer) ->
+              writeln(execute(Result));
+          (string_join(" ", List, Text),
+           store_longterm_fact(not_understood_sentence(Text, Result)),
+           Answer = "Sorry, unable to understand. Could you clarify?")
+         );
+     (string_join(" ", List, Text),
+      store_longterm_fact(not_understood_sentence(Text)),
+      Answer = "Sorry, unable to grasp. Could you clarify?")).
 
 :- add_answerer(lang:lang_answer).
 

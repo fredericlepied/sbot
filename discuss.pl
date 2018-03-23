@@ -187,6 +187,12 @@ answer([Help], Context, Answer) :-
                 bold("subscriptions")], Answer),
     !.
 
+% forward to NLP module
+answer([Topic|Rest], Context, Answer) :-
+    Topic \== "lang",
+    answer(["lang",Topic|Rest], Context, Answer),
+    !.
+
 answer(List, Context, Answer) :-
     string_join(" ", List, Text),
     store_longterm_fact(not_understood_sentence(Text)),
