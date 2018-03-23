@@ -72,6 +72,14 @@ process_message(Id, Server, "PRIVMSG", [Param|_], Text) :-
     wait_a_bit,
     public_message(Id, CleanList, Nick, Param).
 
+process_message(Id, Server, "PRIVMSG", [Chan|_], Text) :-
+    split_words(Text, S),
+    config(irc_nick, IrcNick),
+    not(member(IrcNick, S)),
+    prefix_id(Server, Nick, _, _),
+    wait_a_bit,
+    public_message(Id, S, [Nick,Chan]).
+
 process_message(_, _, _, _, _).
 
 private_message(Id, TextList, Nick) :-
@@ -79,9 +87,16 @@ private_message(Id, TextList, Nick) :-
     answer(TextList, Context, Answer),
     send_message(Answer, Context).
 
+% public message directed to the bot
 public_message(Id, TextList, Nick, Chan) :-
     Context = [Id, Nick, Chan],
     answer(TextList, Context, Answer),
+    send_message(Answer, Context).
+
+% public message not directed to the bot
+public_message(Id, TextList, [Nick,Chan]) :-
+    Context = [Id, Nick, Chan],
+    public_answer(Nick, TextList, Context, Answer),
     send_message(Answer, Context).
 
 send_message(Text, [Id, Nick]) :-
@@ -95,6 +110,11 @@ send_message(Text, [Id, _, Chan]) :-
 add_answerer(Pred) :-
     asserta(answerer(Pred)).
 
+public_answer(Nick, [Text], _, Answer) :-
+    string_upper(Text, UpperElt),
+    member(UpperElt, ["HI", "HELLO", "SALUT", "BONJOUR", "HOLA", "HEY", "MORNING", "ALOHA", "MATIN", "PLOP", "O/", "\\O/"]),
+    format(string(Answer), "~w ~w", [Text, Nick]).
+    
 answer(TextList, Context, PrefixedAnswer) :-
     answerer(Pred),
     call(Pred, TextList, Context, Answer),
@@ -143,6 +163,12 @@ answer([Elt|_], Context, Answer) :-
     string_upper(Elt, UpperElt),
     member(UpperElt, ["THX", "THANKS", "THANK"]),
     add_prefix(Context, "you're welcome", Answer),
+    !.
+
+answer([Elt|_], Context, Answer) :-
+    string_upper(Elt, UpperElt),
+    member(UpperElt, ["GG", "<3"]),
+    add_prefix(Context, "Thx", Answer),
     !.
 
 answer([Help], Context, Answer) :-
