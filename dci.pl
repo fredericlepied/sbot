@@ -3,6 +3,7 @@
 :- module(dci, []).
 
 :- use_module(library(http/http_open)).
+:- use_module(library(http/http_client)).
 :- use_module(library(http/json)).
 
 :- use_module(world).
@@ -37,7 +38,12 @@ deduce_dci_facts(Gen) :-
     Gen \== 1,
     get_fact(dci_component(Product, Topic, NewComponent)),
     not(get_old_fact(dci_component(Product, Topic, _))),
-    store_fact(Gen, new_dci_component(Product, Topic, NewComponent)).
+    store_fact(Gen, new_dci_component(Product, Topic, NewComponent)),
+    % TODO(spredzy): Currently listing openshift image stream for rhosp13 is
+    % broken waiting to hear back from rel-del. Works with rhosp12.
+    Topic \== "OSP13",
+    sync_puddle(Product, Topic, Reply),
+    store_midterm_fact(dci_sync_job(Reply.event_id, Reply.message)).
 
 deduce_dci_facts(Gen) :-
     get_fact(dci_job(Product, Topic, Component, Team, RemoteCI, JobStatus, JobId, RConf)),
@@ -83,6 +89,14 @@ dci_solver(_) :-
     colored(JobStatus, Colored),
     notification(["dci", Product, Topic, "new_job"], [Text, Colored]).
 
+dci_solver(_) :-
+    get_midterm_fact(dci_sync_job(EventId, Message)),
+    get_sync_job_status(EventId, Status),
+    split_string(Message, " ", "", [_, _, Item, _, _, _]),
+    format(string(Text), "Status of ~w import: ~w (http://feeder.distributed-ci.io/logs/~w)", [Item, Status, EventId]),
+    notification(["dci", "sync_job"], [Text]),
+    remove_midterm_fact(dci_sync_job(EventId, Message)).
+
 colored("success", green("success")).
 colored("failure", red("failure")).
 
@@ -103,6 +117,27 @@ get_dci_jobs(Status) :-
         close(In)
     ).
 
+sync_puddle(Product, Topic, Reply) :-
+    format(string(Url), "http://feeder.distributed-ci.io/~w/~w", [Product, Topic]),
+    setup_call_cleanup(
+        http_open(Url, In, [status_code(Code), method(post)]),
+        json_read_dict(In, Reply),
+        close(In)
+    ).
+
+get_sync_job_status(Id, Status) :-
+    format(string(Url), "http://feeder.distributed-ci.io/logs/~s", [Id]),
+    setup_call_cleanup(
+        http_open(Url, In, []),
+        read_string(In, _, Reply),
+        close(In)
+    ),
+    split_string(Reply, "\n", "", List),
+    reverse(List, [_, StatusLine|_]),
+    split_string(StatusLine, " ", "", LastLineWords),
+    reverse(LastLineWords, [Status|_]),
+    member(Status, ["SUCCESS", "FAILURE", "UNCHANGED"]).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Communication predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -112,10 +147,12 @@ dci_answer(["dci", "help"], _,
            ["Available commands:\n",
             bold("dci products"), ": display the list of available products.\n",
             bold("dci components <product>"), ": display the list of latest components for a product.\n",
+            bold("dci sync <product> <topic>"), ": synchornize the specified topic.\n",
             "Available notifications\n",
             bold("dci <product> <topic> new_component\n"),
             bold("dci <product> <topic> out_of_sync\n"),
-            bold("dci <product> <topic> new_job")
+            bold("dci <product> <topic> new_job\n"),
+            bold("dci sync_job")
            ]).
 
 % dci products
@@ -131,6 +168,12 @@ dci_answer(["dci", "components", Product], _, Answer) :-
     sort(Components, ComponentsSorted),
     string_join(" ", ComponentsSorted, ComponentsText),
     format(string(Answer), "~w", [ComponentsText]).
+
+% dci sync <Product> <Topic>
+dci_answer(["dci", "sync", Product, Topic], _, Answer) :-
+    sync_puddle(Product, Topic, Reply),
+    store_midterm_fact(dci_sync_job(Reply.event_id, Reply.message)),
+    format(string(Answer), "~w", [Reply.message]).
 
 dci_answer(Product, Answer) :-
     get_fact(dci_component(Product, Topic, Name)),
