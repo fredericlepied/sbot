@@ -12,20 +12,6 @@
 :- initialization
    run.
 
-% assert_handlers/2 is used for asserting event handlers. These event handlers
-% must have an arity of 1. The first argument is the Id of the connection. The
-% Id of the connection is established as the alias of the thread of the actual
-% connection. The second argument is a list of event goals to be be applied to
-% incoming server messages. The connection Id _must_ be ground.
-
-% Below, we have use assert_handlers/2 as a directive, but they may not be in
-% in your application. If assert_handlers/2 is used in a module file, then you
-% must make sure that your module exports the event predicates that you want to
-% use with assert_handlers/2.
-
-:- assert_handlers(irc, [irc:output, irc:nick_change, irc:echo_connected]).
-
-
 % The next two predicates below (output/1 and echo_connected/1) are the actual
 % implementations of the event goals that process the incoming server messages.
 % As mentioned in the README of this pack, this is a very low level protocol
@@ -81,6 +67,7 @@ run :-
 
 connect :-
     repeat,
+    assert_handlers(irc, [irc:output, irc:nick_change, irc:echo_connected]),
     catch(
 	thread_create(join_channels, _, [alias(irc), at_exit(disconnect(irc))]),
 	Err,
