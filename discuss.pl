@@ -18,12 +18,15 @@ notification(List, Text, Times) :-
 
 notification(List, Text) :-
     writeln(notification(List, Text)),
+    notification_aux(List, Text).
+
+notification_aux(List, Text) :-
     get_longterm_fact(subscription(Sub, Context)),
     sublist(Sub, List),
     notify(Text, Context),
-    !.
+    fail.
 
-notification(_, _).
+notification_aux(_, _).
 
 % [irc, "nick", "chan"] -> [irc, "chan"]
 % [irc, "chan"] -> [irc, "chan"]
