@@ -1,6 +1,7 @@
 %% -*- prolog -*-
 
-:- module(discuss, [process_message/5, add_answerer/1, notify/2, notification/2, notification/3, split_words/2]).
+:- module(discuss, [process_message/5, add_answerer/1, notify/2, notification/2, notification/3,
+                    split_words/2, send_notifications/0]).
 
 :- use_module(library(irc_client_utilities)).
 :- use_module(library(irc_client_parser)).
@@ -23,7 +24,7 @@ notification(List, Text) :-
 notification_aux(List, Text) :-
     get_longterm_fact(subscription(Sub, Context)),
     sublist(Sub, List),
-    notify(Text, Context),
+    store_fact(notify([Text, Context])),
     fail.
 
 notification_aux(_, _).
@@ -314,5 +315,23 @@ update_interactions :-
 update_interactions :-
     get_today_date(Today),
     store_longterm_fact(interaction(Today, 1)).
+
+send_notifications :-
+    setof(Context, get_fact(notify([_, Context])), L),
+    map(discuss:send_notifications_by_context, L, _),
+    !.
+
+send_notifications_by_context(Context, _) :-
+    length(L, Len),
+    findall([Text, Context], get_fact(notify([Text, Context])), L),
+    writeln([send_notifications_by_context, Context, Len, L]),
+    (Len =< 10 ->
+         map(discuss:send_notif, L, _);
+     format("Too many notification (~w) for ~w. Not sending anything to avoid flood.", [Len, Context])
+    ),
+    !.
+
+send_notif([Text, Context], [Text, Context]) :-
+    notify(Text, Context).
 
 %% discuss.pl ends here

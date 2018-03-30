@@ -137,7 +137,10 @@ get_facts(Gen) :-
     format('Deducing facts for gen ~w~n', [Gen]),
     deduce_facts(Gen),
     format('Solving facts for gen ~w~n', [Gen]),
-    solve_facts(Gen).
+    solve_facts(Gen),
+    format('Sending notifications~n'),
+    discuss:send_notifications,
+    format('End gen ~w~n', [Gen]).
 
 get_facts :-
     asserta(last_gen(1)),
