@@ -321,6 +321,8 @@ send_notifications :-
     map(discuss:send_notifications_by_context, L, _),
     !.
 
+send_notifications.
+
 send_notifications_by_context(Context, _) :-
     length(L, Len),
     findall([Text, Context], get_fact(notify([Text, Context])), L),
