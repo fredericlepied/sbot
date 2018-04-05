@@ -39,9 +39,6 @@ deduce_dci_facts(Gen) :-
     get_fact(dci_component(Product, Topic, NewComponent)),
     not(get_old_fact(dci_component(Product, Topic, _))),
     store_fact(Gen, new_dci_component(Product, Topic, NewComponent)),
-    % TODO(spredzy): Currently listing openshift image stream for rhosp13 is
-    % broken waiting to hear back from rel-del. Works with rhosp12.
-    Topic \== "OSP13",
     sync_puddle(Product, Topic, Reply),
     store_midterm_fact(dci_sync_job(Reply.event_id, Reply.message)).
 
