@@ -126,14 +126,14 @@ colored(failure, red("failure")).
 
 % already reproduced build issue
 dlrn_solver(Gen) :-
-    get_fact(dlrn_problem(Name, Branch, Path)),
-    get_old_fact(dlrn_reproduced(Name, Branch, Path, Status)),
-    store_fact(Gen, dlrn_reproduced(Name, Branch, Path, Status)).
+    get_fact(dlrn_problem(Name, Branch, _)),
+    get_old_fact(dlrn_reproduced(Name, Branch, TestedPath, Status)),
+    store_fact(Gen, dlrn_reproduced(Name, Branch, TestedPath, Status)).
 
 % reproduced build issue if not already tried
 dlrn_solver(Gen) :-
-    get_fact(dlrn_problem(Name, Branch, RelPath)),
-    not(get_old_fact(dlrn_reproduced(Name, Branch, RelPath, _))),
+    get_fact(dlrn_problem(Name, Branch, _)),
+    not(get_old_fact(dlrn_reproduced(Name, Branch, _, _))),
     config(dlrn_status_url, [Name, Branch, Url]),
     download_srcrpm(Url, RelPath, Path),
     !,
@@ -245,7 +245,7 @@ dlrn_answer(["dlrn", "remove", "pr", Pr, "from", Name, Branch], Context, Answer)
     format(string(Answer), "ok added removing PR ~w from ~w ~w to my backlog.", [Pr, Name, Branch]).
 
 % dlrn update fedora key 29
-dlrn_answer(["dlrn", "update", "fedora", "key", Key], Context, Answer) :-
+dlrn_answer(["dlrn", "update", "fedora", "key", Key], _, Answer) :-
     (update_fedora_key(Key) ->
          format(string(Answer), "added fedora key ~w", [Key]);
      format(string(Answer), "unable to add fedora key ~w", [Key])).
