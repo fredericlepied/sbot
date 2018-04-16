@@ -35,11 +35,32 @@ bot. Under Fedora 27, you just have to do `dnf install pl`. For other
 Linux systems just follow the instructions here:
 http://www.swi-prolog.org/download/stable .
 
+Then install the `irclient` module by running the following command at
+the Prolog prompt:
+
+```prolog
+$ swipl
+Welcome to SWI-Prolog (threaded, 64 bits, version 7.4.2)
+SWI-Prolog comes with ABSOLUTELY NO WARRANTY. This is free software.
+Please run ?- license. for legal details.
+
+For online help and background, visit http://www.swi-prolog.org
+For built-in help, use ?- help(Topic). or ?- apropos(Word).
+
+?- pack_install(irc_client).
+Install irc_client@1.3.0 from https://github.com/eazar001/irc_client/archive/v1.3.0.zip Y/n? 
+...
+```
+
 Then copy the `config.pl.ex` into `config.pl` and edit it to suit your
 needs.
 
 Once your configuration is ready, you just have to issue `./bot.sh` to
 start the bot.
+
+Alternatively, you can use our Ansible playbook to install what is
+needed. If you want to go this road, follow the instructions in the
+[README.md](install/REAME.md) file.
 
 ## Modules
 
