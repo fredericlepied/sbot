@@ -8,16 +8,21 @@
 :- use_module(utils).
 :- use_module(world).
 
-sentence(V) --> polite, verbal_group(V), ["?"].
+sentence(V) --> polite, verbal_group(V), question_mark.
 sentence(V) --> verbal_group(V).
-sentence(find(O,A,C)) --> pronoun, object(O), be, action(A), object(C), ["?"].
-sentence(find(O)) --> pronoun, be, object(O), ["?"].
-sentence(find(O)) --> pronoun, object(O), interrogation_verb, ["?"].
-sentence(find(O, C)) --> pronoun, object(O), interrogation_verb, complement(C), ["?"].
-sentence(find(O, C)) --> pronoun, be, object(O), complement(C), ["?"].
-sentence(count(O)) --> how_many, object(O), ["?"].
-sentence(count(O)) --> how_many, object(O), interrogation_verb, ["?"].
-sentence(count(O, C)) --> how_many, object(O), interrogation_verb, complement(C), ["?"], {validate_count(O,C)}.
+sentence(find(O,A,C)) --> pronoun, object(O), be, action(A), object(C), question_mark.
+sentence(find(O)) --> pronoun, be, object(O), question_mark.
+sentence(find(O)) --> polite, ["list"], object(O), question_mark.
+sentence(find(O)) --> pronoun, object(O), interrogation_verb, question_mark.
+sentence(find(O, C)) --> pronoun, object(O), interrogation_verb, complement(C), question_mark.
+sentence(find(O, C)) --> pronoun, be, object(O), complement(C), question_mark.
+sentence(find(O, C)) --> pronoun, object(O), be, complement(C), question_mark.
+sentence(count(O)) --> how_many, object(O), question_mark.
+sentence(count(O)) --> how_many, object(O), interrogation_verb, question_mark.
+sentence(count(O, C)) --> how_many, object(O), interrogation_verb, complement(C), question_mark, {validate_count(O,C)}.
+
+question_mark --> ["?"].
+question_mark --> [].
 
 how_many --> polite, ["how","many"].
 how_many --> polite, ["count","how","many"].
@@ -104,6 +109,14 @@ noun(list(_)) --> ["trello","list"].
 noun(list(_)) --> ["list"].
 noun(list(_)) --> ["trello","lists"].
 noun(list(_)) --> ["lists"].
+noun(list(List)) --> ["trello","column"], list(List).
+noun(list(List)) --> ["column"], list(List).
+noun(list(List)) --> list(List), ["column"].
+noun(list(List)) --> list(List).
+noun(list(_)) --> ["trello","column"].
+noun(list(_)) --> ["column"].
+noun(list(_)) --> ["trello","columns"].
+noun(list(_)) --> ["columns"].
 noun(status(O)) --> ["status","of"], object(O).
 noun(puddle(Puddle)) --> puddle(Puddle).
 noun(puddle(Puddle)) --> puddle(Puddle), ["puddle"].
@@ -195,6 +208,9 @@ is_a(project, O) :-
 is_a(job, O) :-
     get_fact(dci_job(_, _, _, _, O, _, _, _)).
 
+is_a(partner, O) :-
+    get_fact(dci_job(_, _, _, O, _, _, _, _)).
+
 is_a(product, O) :-
     get_fact(dci_component(O, _, _)).
 
@@ -240,6 +256,9 @@ property(O, product, P) :-
 
 property(O, component, P) :-
     get_fact(dci_job(_, P, _, _, O, _, _, _)).
+
+property(O, component, P) :-
+    get_fact(dci_job(_, P, _, O, _, _, _, _)).
 
 % product of a component
 property(O, product, P) :-
@@ -329,6 +348,7 @@ execute(find(obj(Obj, obj(Obj2))), Answer) :-
 execute(find(obj(Obj), obj(Obj2)), Answer) :-
     compound_name_arity(Obj, Name, _),
     compound_name_arguments(Obj2, _, [Prop]),
+    writeln([Obj, Name, Prop]),
     is_a(Name, _),
     format(string(Answer), "we have no ~w for ~w", [Name, Prop]).
 
@@ -350,6 +370,7 @@ strings_atoms(ListOfStrings, ListOfAtoms) :-
     map(string_atom, ListOfStrings, ListOfAtoms).
     
 lang_answer(["lang"|List], _, Answer) :-
+    writeln(List),
     (phrase(sentence(Result), List) -> 
          (execute(Result, Answer) ->
               writeln(execute(Result));
