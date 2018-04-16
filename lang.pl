@@ -358,8 +358,10 @@ execute(find(obj(Obj, Obj2), obj(Obj3)), Answer) :-
     compound_name_arguments(Obj2, Name2, [Prop2]),
     compound_name_arguments(Obj3, Name3, [Prop3]),
     writeln(setof(Var, (is_a(Name, Var), property(Var, Name2, Prop2), property(Var, Name3, Prop3)), List)),
-    setof(Var, (is_a(Name, Var), property(Var, Name2, Prop2), property(Var, Name3, Prop3)), List),
-    string_join(", ", List, Answer). 
+    (setof(Var, (is_a(Name, Var), property(Var, Name2, Prop2), property(Var, Name3, Prop3)), List) ->
+         string_join(", ", List, Answer);
+     format(string(Answer), "we have no ~w ~w for ~w", [Prop2, Name, Prop3])
+    ). 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% communication predicates
