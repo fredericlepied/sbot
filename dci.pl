@@ -117,7 +117,7 @@ get_dci_jobs(Status) :-
 sync_puddle(Product, Topic, Reply) :-
     format(string(Url), "http://feeder.distributed-ci.io/~w/~w", [Product, Topic]),
     setup_call_cleanup(
-        http_open(Url, In, [status_code(Code), method(post)]),
+        http_open(Url, In, [status_code(_), method(post)]),
         json_read_dict(In, Reply),
         close(In)
     ).
