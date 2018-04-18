@@ -152,7 +152,7 @@ dlrn_solver(Gen) :-
 % not already tried
 dlrn_solver(Gen) :-
     get_fact(dlrn_problem(Name, Branch, RelPath)),
-    not(get_old_fact(dlrn_reproduced(Name, Branch, RelPath, _))),
+    not(get_old_fact(dlrn_reproduced(Name, Branch, _, _))),
     config(dlrn_status_url, [Name, Branch, _]),
     get_download_error(Name, Branch, RelPath, Issue),
     store_fact(Gen, dlrn_reproduced(Name, Branch, RelPath, download_error)),
@@ -333,9 +333,9 @@ remove_patch(Name, Branch, Pr) :-
     string_concat("rpm-", Branch, DistGitBranch),
     cmd("dlrn_unpublish_patch.sh ~w pr-~w.patch ~w", [Dir, Pr, DistGitBranch]).
 
-get_download_error(_, _, RelPath, "invalid or expired") :-
+get_download_error(Name, _, RelPath, "invalid or expired") :-
     workspace("dlrn", Ws),
-    format(string(Filename), "~w/~w/copr.log", [Ws, RelPath]),
+    format(string(Filename), "~w/~w/~w/copr.log", [Ws, Name, RelPath]),
     exists_file(Filename),
     read_file_to_string(Filename, String, []),
     split_string(String, " \n", "", List),
