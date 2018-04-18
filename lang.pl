@@ -16,10 +16,16 @@ sentence(find(O)) --> polite, ["list"], object(O), question_mark.
 sentence(find(O)) --> pronoun, object(O), interrogation_verb, question_mark.
 sentence(find(O, C)) --> pronoun, object(O), interrogation_verb, complement(C), question_mark.
 sentence(find(O, C)) --> pronoun, be, object(O), complement(C), question_mark.
+sentence(find(O, prop(P))) --> pronoun, be, det, a_property(P), complement(O), question_mark.
 sentence(find(O, C)) --> pronoun, object(O), be, complement(C), question_mark.
 sentence(count(O)) --> how_many, object(O), question_mark.
 sentence(count(O)) --> how_many, object(O), interrogation_verb, question_mark.
 sentence(count(O, C)) --> how_many, object(O), interrogation_verb, complement(C), question_mark, {validate_count(O,C)}.
+
+a_property(S, [S|R], R) :-
+    atom_string(P, S),
+    property(_, P, _),
+    !.
 
 question_mark --> ["?"].
 question_mark --> [].
@@ -43,6 +49,7 @@ please --> [].
 
 pronoun --> ["what"].
 pronoun --> ["which"].
+pronoun --> ["who"].
 
 be --> ["is"].
 be --> ["are"].
@@ -65,17 +72,21 @@ complement(N) --> ["in"], object(N).
 complement(N) --> ["on"], object(N).
 complement(N) --> ["for"], object(N).
 complement(N) --> ["at"], object(N).
+complement(N) --> ["of"], object(N).
 
 noun(pr(Pr)) --> github_pr, number(Pr).
 noun(pr(_)) --> github_pr.
 noun(issue(Issue)) --> github_issue, number(Issue).
+noun(issue(Issue)) --> number(Issue).
 noun(issue(_)) --> github_issue.
 noun(review(Review)) --> gerrit_review, number(Review).
+noun(review(Review)) --> number(Review).
 noun(review(_)) --> gerrit_review.
 noun(project(Project)) --> project(Project), ["project"].
 noun(project(Project)) --> ["project"], project(Project).
 noun(project(Project)) --> project(Project).
 noun(project(_)) --> ["project"].
+noun(project(_)) --> ["projects"].
 noun(package(Package)) --> ["package"], package(Package).
 noun(package(Package)) --> package(Package), ["package"].
 noun(package(Package)) --> package(Package).
@@ -139,11 +150,11 @@ gerrit_review --> ["gerrit","review"].
 gerrit_review --> ["reviews"].
 gerrit_review --> ["gerrit","reviews"].
 
-number(42, ["42"|R], R).
-number(42, [42|R], R).
+number("42", ["42"|R], R).
+number("42", [42|R], R).
 
-number(I, [S|R], R) :-
-    number_string(I, S).
+number(S, [S|R], R) :-
+    number_string(_, S).
 
 project("ansible", ["ansible"|R], R).
 project("systemd", ["systemd"|R], R).
@@ -362,6 +373,15 @@ execute(find(obj(Obj, Obj2), obj(Obj3)), Answer) :-
          string_join(", ", List, Answer);
      format(string(Answer), "we have no ~w ~w for ~w", [Prop2, Name, Prop3])
     ). 
+
+% find(obj(review(11281)),prop(subject))
+execute(find(obj(Obj), prop(PropName)), Answer) :-
+    writeln(find(obj(Obj), prop(PropName))),
+    compound_name_arguments(Obj, _, [Val]),
+    atom_string(AtomPropName, PropName),
+    writeln(setof(Prop, (property(Val, AtomPropName, Prop)), List)),
+    setof(Prop, (property(Val, AtomPropName, Prop)), List),
+    string_join(", ", List, Answer). 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% communication predicates
