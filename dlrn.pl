@@ -132,19 +132,20 @@ dlrn_solver(Gen) :-
 
 % reproduced build issue if not already tried
 dlrn_solver(Gen) :-
-    get_fact(dlrn_problem(Name, Branch, _)),
+    get_fact(dlrn_problem(Name, Branch, RelPath)),
     not(get_old_fact(dlrn_reproduced(Name, Branch, _, _))),
     config(dlrn_status_url, [Name, Branch, Url]),
-    download_srcrpm(Url, RelPath, Path),
+    writeln(download_srcrpm(Url, Name, RelPath, Path)),
+    download_srcrpm(Url, Name, RelPath, Path),
     !,
     url_workspace("dlrn", WsUrl),
     (build_srcrpm(Path) -> Status = success; Status = failure),
     store_fact(Gen, dlrn_reproduced(Name, Branch, RelPath, Status)),
     (Status == success ->
-         format(string(Text), "** DLRN ~w build problem not reproduced for ~w (~w/~w)",
-                [Name, Branch, WsUrl, RelPath]);
-     format(string(Text), "** DLRN ~w build problem reproduced for ~w (~w/~w)",
-            [Name, Branch, WsUrl, RelPath])),
+         format(string(Text), "** DLRN ~w build problem not reproduced for ~w (~w/~w/~w)",
+                [Name, Branch, WsUrl, Name, RelPath]);
+     format(string(Text), "** DLRN ~w build problem reproduced for ~w (~w/~w/~w)",
+            [Name, Branch, WsUrl, Name, RelPath])),
     notification(["dlrn", Name, Branch, "reproduce"], Text).
 
 % not able to reproduce a build issue because of a download issue if
@@ -305,17 +306,17 @@ git_extract_pr(Name, Pr) :-
 get_last_path(Name, Branch, Path) :-
     get_fact(dlrn_info(Name, Branch, [[_,[_,Path,_]]|_])).
 
-download_srcrpm(Url, RelPath, Path) :-
+download_srcrpm(Url, Prefix, RelPath, Path) :-
     workspace("dlrn", Ws),
-    cmd("dlrn_download_srcrpm.sh ~w ~w ~w", [Ws, Url, RelPath]),
-    format(string(Path), "~w/~w", [Ws, RelPath]).
+    cmd("dlrn_download_srcrpm.sh ~w ~w ~w ~w", [Ws, Url, Prefix, RelPath]),
+    format(string(Path), "~w/~w/~w", [Ws, Prefix, RelPath]).
 
 build_srcrpm(Path) :-
     cmd("dlrn_build_srcrpm.sh ~w", [Path]).
 
 build_pr(Name, Branch, RelPath, Pr) :-
     config(dlrn_status_url, [Name, Branch, Url]),
-    download_srcrpm(Url, RelPath, Path),
+    download_srcrpm(Url, Name, RelPath, Path),
     git_extract_pr(Name, Pr),
     workspace("dlrn", Ws),
     cmd("dlrn_inject_patch.sh ~w ~w/~w/pr-~w.patch", [Path, Ws, Name, Pr]),
