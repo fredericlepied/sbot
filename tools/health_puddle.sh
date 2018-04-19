@@ -55,7 +55,7 @@ OSP_VERSION=$(echo ${PUDDLE_URL} | sed 's#.*/\(.*\).0-RHEL-7/.*$#\1#')
 
 check_status
 
-if [[ $OSP_VERSION -ge 10 ]]; then
+if [[ $OSP_VERSION -ge 11 ]]; then
     check_dlrn_data
 fi
 
