@@ -75,9 +75,9 @@ deduce_trello_facts(Gen) :-
 % cards: new card
 deduce_trello_facts(Gen) :-
     not_first_iteration(Gen),
-    get_fact(trello_card(Id, Name, false, _, _, _, _, _, ListName, _, BoardName)),
+    get_fact(trello_card(Id, Name, false, _, _, _, Url, _, ListName, _, BoardName)),
     not(get_old_fact(trello_card(Id, _, false, _, _, _, _, _, _, _, _))),
-    store_fact(Gen, new_trello_card(Id, Name, ListName, BoardName)).
+    store_fact(Gen, new_trello_card(Id, Name, ListName, BoardName, Url)).
 
 % cards: moved card
 deduce_trello_facts(Gen) :-
@@ -172,8 +172,9 @@ trello_solver(_) :-
     notification(["trello", BoardName, "archived_list"], Text).
 
 trello_solver(_) :-
-    get_fact(new_trello_card(_, Name, ListName, BoardName)),
-    format(string(Text), "** [~w] New card \"~w\" added to \"~w\"", [BoardName, Name, ListName]),
+    get_fact(new_trello_card(_, Name, ListName, BoardName, Url)),
+    format(string(Text), "** [~w] New card \"~w\" added to \"~w\" (~w)",
+           [BoardName, Name, ListName, Url]),
     notification(["trello", BoardName, "new_card"], Text).
 
 trello_solver(_) :-
