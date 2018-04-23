@@ -50,10 +50,22 @@ function check_containers {
     fi
 }
 
+function check_embargo {
+    linckchecker ${PUDDLE_URL}/EMBARGOED
+
+    if [[ $? -eq 1 ]]; then
+        echo "EMBARGOED: Not under embargo"
+    else
+        echo "EMBARGOED: Puddle under embargo"
+        exit 1
+    fi
+}
+
 PUDDLE_URL=$1
 OSP_VERSION=$(echo ${PUDDLE_URL} | sed 's#.*/\(.*\).0-RHEL-7/.*$#\1#')
 
 check_status
+check_embargo
 
 if [[ $OSP_VERSION -ge 11 ]]; then
     check_dlrn_data

@@ -75,6 +75,7 @@ dci_solver(_) :-
     get_fact(puddle_info(Topic, _, "latest", Puddle)),
     split_string(NewComponent, " ", "", [_, ComponentPuddle]),
     ComponentPuddle \== Puddle,
+    not(get_fact(puddle_unhealthy(Topic, _, "latest", Puddle, _))),
     format(string(Text), "** DCI out of sync for ~w. DCI version: ~w | Puddle available: ~w", [Topic, ComponentPuddle, Puddle]),
     % notify only every 60 mn (12 x 5) to avoid flooding the chan every 5 mn
     notification(["dci", Product, Topic, "out_of_sync"], Text, 12).
