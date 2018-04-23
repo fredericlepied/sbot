@@ -5,7 +5,11 @@
 
 :- use_module(library(irc_client_utilities)).
 :- use_module(library(irc_client_parser)).
+:- use_module(library(http/http_open)).
+:- use_module(library(xpath)).
+
 :- use_module(config).
+:- use_module(gerritlib).
 :- use_module(utils).
 :- use_module(world).
 :- use_module(irc).
@@ -121,6 +125,21 @@ public_answer(Nick, [Text], _, Answer) :-
     member(UpperElt, ["HI", "HELLO", "SALUT", "BONJOUR", "HOLA", "HEY", "MORNING", "ALOHA", "MATIN", "PLOP", "O/", "\\O/"]),
     format(string(Answer), "~w ~w", [Text, Nick]).
     
+public_answer(_, TextList, _, Answer) :-
+    extract_first_url(TextList, Url),
+    url_to_title(Url, Answer),
+    !.
+
+url_to_title(Url, Title) :-
+    is_gerrit_review(Url, ReviewId, BaseUrl),
+    get_gerrit_review(BaseUrl, ReviewId, Review),
+    Title = Review.subject.
+
+url_to_title(Url, Title) :-
+    http_open(Url, Stream, []),
+    load_html(Stream, Dom, []),
+    xpath(Dom, //title(text), Title).
+
 answer(TextList, Context, PrefixedAnswer) :-
     answerer(Pred),
     call(Pred, TextList, Context, Answer),
