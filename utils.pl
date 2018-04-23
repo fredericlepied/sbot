@@ -2,7 +2,7 @@
 
 :- module(utils,
           [cmd/2, cmd/3, cmd/4, string_join/3, dirbase/3, workspace/2, url_workspace/2, get_config/3,
-           load_external_modules/0, sublist/2, map/3, string_atom/2
+           load_external_modules/0, sublist/2, map/3, string_atom/2, extract_first_url/2
           ]).
 
 :- use_module(config).
@@ -118,5 +118,12 @@ map(F, [S|Rest], [R|RRest]) :-
 
 string_atom(S, A) :-
     atom_string(A, S).
+
+extract_first_url([Url|_], Url) :-
+    is_absolute_url(Url),
+    !.
+    
+extract_first_url([_|List], Url) :-
+    extract_first_url(List, Url).
 
 %% utils.pl ends here
