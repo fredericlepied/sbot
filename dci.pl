@@ -145,7 +145,7 @@ dci_answer(["dci", "help"], _,
            ["Available commands:\n",
             bold("dci products"), ": display the list of available products.\n",
             bold("dci components <product>"), ": display the list of latest components for a product.\n",
-            bold("dci sync <product> <topic>"), ": synchornize the specified topic.\n",
+            bold("dci sync <product> <topic>"), ": synchronize the specified topic.\n",
             "Available notifications\n",
             bold("dci <product> <topic> new_component\n"),
             bold("dci <product> <topic> out_of_sync\n"),
@@ -171,7 +171,7 @@ dci_answer(["dci", "components", Product], _, Answer) :-
 dci_answer(["dci", "sync", Product, Topic], _, Answer) :-
     sync_puddle(Product, Topic, Reply),
     store_midterm_fact(dci_sync_job(Reply.event_id, Reply.message)),
-    format(string(Answer), "~w", [Reply.message]).
+    format(string(Answer), "~w (http://feeder.distributed-ci.io/logs/~w)", [Reply.message, Reply.event_id]).
 
 dci_answer(Product, Answer) :-
     get_fact(dci_component(Product, Topic, Name)),
