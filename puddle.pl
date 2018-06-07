@@ -38,9 +38,9 @@ deduce_puddle_facts(Gen) :-
     store_fact(Gen, new_puddle(ProdVer, Url, Type, New)).
 
 deduce_puddle_facts(Gen) :-
-    get_puddle_health(ProdVer, Type, Url, Puddle, OutputLines, Status),
+    get_puddle_health(ProdVer, Url, Puddle, OutputLines, Status),
     Status == 1,
-    store_fact(Gen, puddle_unhealthy(ProdVer, Url, Type, Puddle, OutputLines)).
+    store_fact(Gen, puddle_unhealthy(ProdVer, Url, Puddle, OutputLines)).
 
 :- add_fact_deducer(puddle:deduce_puddle_facts).
 
@@ -59,9 +59,9 @@ puddle_solver(_) :-
     notification(["puddle", ProdVer, "new"], Text).
 
 puddle_solver(_) :-
-    get_fact(puddle_unhealthy(ProdVer, Url, Type, Puddle, OutputLines)),
+    get_fact(puddle_unhealthy(ProdVer, Url, Puddle, OutputLines)),
     string_join(", ", OutputLines, Result),
-    format(string(Text), "** Puddle ~w/~w is unhealthy (~w~w)\n~w", [ProdVer, Type, Url, Puddle, Result]),
+    format(string(Text), "** Puddle ~w/latest is unhealthy (~w~w)\n~w", [ProdVer, Url, Puddle, Result]),
     % notify only every 120 mn (24 x 5) to avoid flooding the chan every 5 mn
     notification(["puddle", ProdVer, "health_check"], Text, 24).
 
@@ -99,9 +99,9 @@ lookup_product(Product, [_|Rest], Puddle) :-
 puddle_health_check(Url, OutputLines, Status) :-
     cmd("health_puddle.sh ~w", [Url], OutputLines, Status).
 
-get_puddle_health(ProdVer, Type, Url, Puddle, OutputLines, Status) :-
-    get_fact(puddle_info(ProdVer, Url, Type, Puddle)),
-    format(string(PuddleUrl), "~w/~w", [Url, Type]),
+get_puddle_health(ProdVer, Url, Puddle, OutputLines, Status) :-
+    get_fact(puddle_info(ProdVer, Url, "latest", Puddle)),
+    format(string(PuddleUrl), "~w/latest", [Url]),
     puddle_health_check(PuddleUrl, OutputLines, Status).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -137,7 +137,7 @@ puddle_answer(["puddle", ProdVer, Type], _, Answer) :-
     format(string(Answer), "~w ~w does not exist", [ProdVer, Type]).
 
 puddle_answer(["puddle", "health", ProdVer, Type], _, Answer) :-
-    get_puddle_health(ProdVer, Type, Url, Puddle, OutputLines, _),
+    get_puddle_health(ProdVer, Url, Puddle, OutputLines, _),
     string_join(", ", OutputLines, Result),
     format(string(Answer), "~w/~w ~w~w\n~w", [ProdVer, Type, Url, Puddle, Result]).
 
