@@ -13,7 +13,13 @@ cd $DIR
 git checkout $BRANCH
 git pull
 remove_patch.py $PATCH *.spec
-git rm -f $(basename $PATCH)
+
+PATCH=$(basename $PATCH)
+
+if [ -r $PATCH ]; then
+    git rm -f $PATCH
+fi
+
 git commit -m "removed $PATCH" *.spec $PATCH
 git push
 
