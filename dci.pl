@@ -73,7 +73,7 @@ dci_solver(_) :-
 dci_solver(_) :-
     get_fact(dci_component(Product, Topic, NewComponent)),
     get_fact(puddle_info(Topic, _, "latest", Puddle)),
-    split_string(NewComponent, " ", "", [_, ComponentPuddle]),
+    get_puddle_from_component(NewComponent, ComponentPuddle),
     ComponentPuddle \== Puddle,
     not(get_fact(puddle_unhealthy(Topic, _, Puddle, _))),
     format(string(Text), "** DCI out of sync for ~w. DCI version: ~w | Puddle available: ~w", [Topic, ComponentPuddle, Puddle]),
@@ -94,6 +94,16 @@ dci_solver(_) :-
     format(string(Text), "Status of ~w import: ~w (http://feeder.distributed-ci.io/logs/~w)", [Item, Status, EventId]),
     notification(["dci", "sync_job"], [Text]),
     remove_midterm_fact(dci_sync_job(EventId, Message)).
+
+% OSP Puddles: RH7-RHOS-14.0 2018-06-13.2
+get_puddle_from_component(Component, ComponentPuddle) :-
+    split_string(Component, " ", "", [_, ComponentPuddle]),
+    !.
+
+% RHEL Puddles: RHEL-7.6-20180617.n.0
+get_puddle_from_component(Component, ComponentPuddle) :-
+    split_string(Component, "-", "", [_, _, ComponentPuddle]),
+    !.
 
 colored("success", green("success")).
 colored("failure", red("failure")).
