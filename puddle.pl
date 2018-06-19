@@ -113,8 +113,7 @@ puddle_health_check(Url, OutputLines, Status) :-
 
 get_puddle_health(ProdVer, Url, Puddle, OutputLines, Status) :-
     get_fact(puddle_info(ProdVer, Url, "latest", Puddle)),
-    format(string(PuddleUrl), "~w/latest", [Url]),
-    puddle_health_check(PuddleUrl, OutputLines, Status).
+    puddle_health_check(Url, OutputLines, Status).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Communication predicates
