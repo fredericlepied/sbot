@@ -19,6 +19,12 @@ update_puddle_facts(Gen) :-
     string_concat(Product, Version, ProdVer),
     store_fact(Gen, puddle_info(ProdVer, Url, Type, Puddle)).
 
+update_puddle_facts(Gen) :-
+    config(puddle, [Product, Version, Url]),
+    get_puddle_fact(Url, Puddle),
+    format(string(ProdVer), "~w-~w", [Product, Version]),
+    store_fact(Gen, puddle_info(ProdVer, Url, "latest", Puddle)).
+
 :- add_fact_updater(puddle:update_puddle_facts).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -78,6 +84,12 @@ get_puddle_fact(Version, Url, Type, Puddle) :-
     http_get(RepoUrl, Repo, [status_code(Code)]),
     Code == 200,
     get_puddle_from_repo(Product, Repo, Puddle).
+
+get_puddle_fact(Url, Puddle) :-
+    format(string(RepoUrl), "~w/COMPOSE_ID", [Url]),
+    http_get(RepoUrl, PuddleComponentId, [status_code(Code)]),
+    Code == 200,
+    split_string(PuddleComponentId, "-", "", [_, _, Puddle]).
 
 get_puddle_from_repo(Product, Repo, Puddle) :-
     split_string(Repo, "\n", "", Lines),
