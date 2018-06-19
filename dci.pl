@@ -76,7 +76,9 @@ dci_solver(_) :-
     get_puddle_from_component(NewComponent, ComponentPuddle),
     ComponentPuddle \== Puddle,
     not(get_fact(puddle_unhealthy(Topic, _, Puddle, _))),
-    format(string(Text), "** DCI out of sync for ~w. DCI version: ~w | Puddle available: ~w", [Topic, ComponentPuddle, Puddle]),
+    normalize_topic_name(Topic, NewTopic),
+    sync_puddle(Product, NewTopic, Reply),
+    format(string(Text), "** DCI out of sync for ~w. DCI version: ~w | Puddle available: ~w (Job in progress: http://feeder.distributed-ci.io/logs/~w)", [Topic, ComponentPuddle, Puddle, Reply.event_id]),
     % notify only every 60 mn (12 x 5) to avoid flooding the chan every 5 mn
     notification(["dci", Product, Topic, "out_of_sync"], Text, 12).
 
@@ -103,6 +105,16 @@ get_puddle_from_component(Component, ComponentPuddle) :-
 % RHEL Puddles: RHEL-7.6-20180617.n.0
 get_puddle_from_component(Component, ComponentPuddle) :-
     split_string(Component, "-", "", [_, _, ComponentPuddle]),
+    !.
+
+% RHEL Topic: RHEL-7
+normalize_topic_name(Topic, NewTopic) :-
+    split_string(Topic, "-", "", [Product, Version]),
+    string_concat(Product, Version, NewTopic),
+    !.
+
+% OSP Topic: OSP14
+normalize_topic_name(Topic, Topic) :-
     !.
 
 colored("success", green("success")).
