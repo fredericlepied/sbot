@@ -72,7 +72,7 @@ dci_solver(_) :-
 
 dci_solver(_) :-
     get_fact(dci_component(Product, Topic, NewComponent)),
-    get_fact(puddle_info(Topic, _, "latest", Puddle)),
+    get_fact(puddle_info(Topic, _, "passed_phase1", Puddle)),
     get_puddle_from_component(NewComponent, ComponentPuddle),
     ComponentPuddle \== Puddle,
     not(get_fact(puddle_unhealthy(Topic, _, Puddle, _))),
