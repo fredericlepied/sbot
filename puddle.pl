@@ -23,7 +23,7 @@ update_puddle_facts(Gen) :-
     config(puddle, [Product, Version, Url]),
     get_puddle_fact(Url, Puddle),
     format(string(ProdVer), "~w-~w", [Product, Version]),
-    store_fact(Gen, puddle_info(ProdVer, Url, "latest", Puddle)).
+    store_fact(Gen, puddle_info(ProdVer, Url, "passed_phase1", Puddle)).
 
 :- add_fact_updater(puddle:update_puddle_facts).
 
@@ -67,7 +67,7 @@ puddle_solver(_) :-
 puddle_solver(_) :-
     get_fact(puddle_unhealthy(ProdVer, Url, Puddle, OutputLines)),
     string_join(", ", OutputLines, Result),
-    format(string(Text), "** Puddle ~w/latest is unhealthy (~w~w)\n~w", [ProdVer, Url, Puddle, Result]),
+    format(string(Text), "** Puddle ~w/passed_phase1 is unhealthy (~w~w)\n~w", [ProdVer, Url, Puddle, Result]),
     % notify only every 120 mn (24 x 5) to avoid flooding the chan every 5 mn
     notification(["puddle", ProdVer, "health_check"], Text, 24).
 
@@ -112,7 +112,7 @@ puddle_health_check(Url, OutputLines, Status) :-
     cmd("health_puddle.sh ~w", [Url], OutputLines, Status).
 
 get_puddle_health(ProdVer, Url, Puddle, OutputLines, Status) :-
-    get_fact(puddle_info(ProdVer, Url, "latest", Puddle)),
+    get_fact(puddle_info(ProdVer, Url, "passed_phase1", Puddle)),
     puddle_health_check(Url, OutputLines, Status).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
