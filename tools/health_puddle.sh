@@ -81,7 +81,7 @@ PUDDLE_URL=$1
 
 if [[ $PUDDLE_URL = *"OpenStack"*   ]]; then
     OSP_VERSION=$(echo ${PUDDLE_URL} | sed 's#.*/\(.*\).0-RHEL-7/.*$#\1#')
-    PUDDLE_URL="${PUDDLE_URL}/latest"
+    PUDDLE_URL="${PUDDLE_URL}/passed_phase1"
     check_osp_status
     check_embargo
 
