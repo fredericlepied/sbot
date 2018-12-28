@@ -21,6 +21,7 @@ sentence(find(O, C)) --> pronoun, object(O), be, complement(C), question_mark.
 sentence(count(O)) --> how_many, object(O), question_mark.
 sentence(count(O)) --> how_many, object(O), interrogation_verb, question_mark.
 sentence(count(O, C)) --> how_many, object(O), interrogation_verb, complement(C), question_mark, {validate_count(O,C)}.
+sentence(count(O, A, C)) --> how_many, object(O), be, action(A), complement(C), question_mark, {validate_count(O,C)}.
 
 a_property(S, [S|R], R) :-
     atom_string(P, S),
@@ -63,6 +64,7 @@ verbal_group(apply(O)) --> ["apply"], object(O).
 verbal_group(build(O)) --> ["build"], object(O).
 verbal_group(follow(O)) --> ["track"], object(O).
 verbal_group(follow(O)) --> ["follow"], object(O).
+verbal_group(sync(O)) --> ["sync"], object(O).
 
 object(obj(N)) --> det, noun(N).
 object(obj(N, C)) --> det, noun(N, C).
@@ -164,6 +166,9 @@ project(P, [P|R], R) :-
 package("ansible", ["ansible"|R], R).
 
 job(Topic) --> topic(Topic), ["job"].
+job(Topic) --> topic(Topic), ["jobs"].
+job(Component) --> component(Component), ["job"].
+job(Component) --> component(Component), ["jobs"].
 
 topic(T, [T|R], R) :-
     is_a(job, T).
@@ -286,6 +291,9 @@ property(O, partner, P) :-
 property(O, status, P) :-
     get_fact(dci_job(_, _, _, _, O, P, _, _)).
 
+property(O, status, P) :-
+    get_fact(dci_job(_, O, _, _, _, P, _, _)).
+
 property(O, id, P) :-
     get_fact(dci_job(_, _, _, _, O, _, P, _)).
 
@@ -383,6 +391,11 @@ execute(find(obj(Obj), prop(PropName)), Answer) :-
     setof(Prop, (property(Val, AtomPropName, Prop)), List),
     string_join(", ", List, Answer). 
 
+% sync(obj(component(OSP14))
+execute(sync(obj(component(Component))), Answer) :-
+    get_fact(dci_job(Product, Component, _, _, _, _, _, _)),
+    answer(["dci", "sync", Product, Component], _, Answer).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% communication predicates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -394,7 +407,8 @@ strings_atoms(ListOfStrings, ListOfAtoms) :-
 lang_answer(["lang"|List], _, Answer) :-
     writeln(List),
     (phrase(sentence(Result), List) -> 
-         (execute(Result, Answer) ->
+         (writeln(execute(sentence(Result))),
+          execute(Result, Answer) ->
               writeln(execute(Result));
           (string_join(" ", List, Text),
            store_longterm_fact(not_understood_sentence(Text, Result)),

@@ -1,7 +1,7 @@
 %% -*- prolog -*-
 
 :- module(discuss, [process_message/5, add_answerer/1, notify/2, notification/2, notification/3,
-                    split_words/2, send_notifications/0]).
+                    split_words/2, send_notifications/0, answer/3]).
 
 :- use_module(library(irc_client_utilities)).
 :- use_module(library(irc_client_parser)).
